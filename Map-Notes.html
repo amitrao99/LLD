@@ -1,0 +1,2861 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Variations in Java: LLD Scenarios</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --bg: #fdfdfd;
+            --card-bg: #ffffff;
+            --text: #333;
+            --code-bg: #282c34;
+            --code-text: #abb2bf;
+            --border: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+            line-height: 1.8;
+            color: var(--text);
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 60px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Headings */
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            border-bottom: 3px solid var(--accent);
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            color: var(--secondary);
+            font-size: 1.8rem;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+        }
+
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 30px;
+            background-color: var(--accent);
+            margin-right: 15px;
+            border-radius: 4px;
+        }
+
+        h3 {
+            color: var(--primary);
+            font-size: 1.4rem;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        h4 {
+            color: var(--secondary);
+            font-size: 1.2rem;
+            margin-top: 25px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Text & Layout */
+        p {
+            margin-bottom: 20px;
+            font-size: 1.05rem;
+        }
+
+        strong {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        ul {
+            margin-bottom: 25px;
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        /* Specialized Sections (Cards) */
+        .map-section {
+            background-color: #f8f9fa;
+            border-left: 5px solid var(--accent);
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .map-section h3 {
+            margin-top: 0;
+            color: var(--accent);
+        }
+
+        /* Code Blocks */
+        pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 25px 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.95rem;
+            border: 1px solid #3e4451;
+        }
+
+        code {
+            font-family: 'Fira Code', 'Consolas', monospace;
+        }
+
+        /* Use Case Sections */
+        .use-case {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 30px;
+            margin-bottom: 30px;
+        }
+
+        .use-case:last-child {
+            border-bottom: none;
+        }
+
+        /* References Section */
+        .references {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 2px dashed var(--border);
+            font-size: 0.9rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px;
+                margin: 0;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <section>
+            <h1>Core Map Types and Their Trade-Offs</h1>
+
+            <div class="map-section">
+                <h3>HashMap</h3>
+                <p>
+                    • Provides O(1) average time for <code>get</code>, <code>put</code>, and <code>remove</code>
+                    operations
+                    (may degrade to O(n) in worst-case collisions). <br>
+                    • No guaranteed iteration order — order may change after resizing or rehashing. <br>
+                    • Allows one <strong>null key</strong> and multiple <strong>null values</strong>. <br>
+                    • Uses an internal bucket array and automatically resizes when
+                    <code>size > capacity * loadFactor</code> (default load factor: 0.75). <br>
+                    • Resizing doubles the capacity and triggers <strong>rehashing</strong>
+                    (redistributing all entries into new buckets). <br>
+                    • Not thread-safe; requires external synchronization if used across threads. <br>
+                </p>
+
+                <h4>1. Initialization</h4>
+                <p><em>Note: Maps cannot store primitives (int, double). You must use Wrapper classes (Integer,
+                        Double).</em></p>
+                <pre>
+                // 1. Standard Initialization (Default capacity=16, loadFactor=0.75)
+                Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;();
+
+                // 2. With Initial Capacity (Reduces resizing overhead if size is known)
+                Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;(32);
+
+                // 3. With Capacity & Load Factor
+                Map&lt;String, Integer&gt; map = new HashMap&lt;&gt;(32, 0.8f);
+                </pre>
+
+                <h4>2. Common Methods</h4>
+                <pre>
+                put(K key, V val)   → returns prev value or null. Adds/Updates entry.
+                get(Object key)     → returns value or null.
+                remove(Object key)  → removes entry, returns value.
+                containsKey(key)    → returns true if key exists.
+                containsValue(val)  → returns true if value exists (slower O(n)).
+                size()              → returns number of entries.
+                isEmpty()           → returns true if size is 0.
+                keySet()            → returns Set&lt;K&gt; of all keys.
+                values()            → returns Collection&lt;V&gt; of all values.
+                </pre>
+            </div>
+            <div class="map-section">
+                <h3>LinkedHashMap</h3>
+                <p>Extends HashMap by maintaining a doubly-linked list of entries to preserve a defined iteration order.
+                    By default it keeps insertion order, meaning iterating the map yields entries in the order they were
+                    put. Alternatively, it can be constructed with access-order mode
+                    (<code>new LinkedHashMap(capacity, loadFactor, true)</code>), which orders entries by their last
+                    access (recently accessed entries move to the end). This feature makes LinkedHashMap ideal for cache
+                    implementations, especially LRU (Least Recently Used) caches.</p>
+
+                <p>
+                    • In access-order mode, iteration goes from <strong>least recently used (LRU)</strong> at the head
+                    to <strong>most recently used (MRU)</strong> at the tail.
+                </p>
+
+                <p>For example, you can set <code>accessOrder=true</code> and override the
+                    <code>removeEldestEntry()</code> method to automatically evict the oldest entry when a size limit is
+                    exceeded. LinkedHashMap is slightly slower than HashMap (due to maintaining the linked list) but
+                    still provides O(1) basic operations.
+                </p>
+
+                <p><strong>Use Case:</strong> It’s useful when you need predictable iteration order or cache eviction
+                    policy – e.g. returning results in insertion order, or building an in-memory LRU cache that discards
+                    the stalest entry. <strong>Note:</strong> Like HashMap, it’s not thread-safe; external locking or a
+                    synchronized wrapper is needed if used by multiple threads.</p>
+
+                <h4>1. Initialization & Ordering Modes</h4>
+                <p>Unlike TreeMap, LinkedHashMap <strong>does not</strong> support a custom <code>Comparator</code>.
+                    It supports two specific modes, plus an override for eviction policies.</p>
+                <pre>
+                // 1. Insertion Order (Default)
+                // Iteration follows the sequence of 'put' operations.
+                Map&lt;String, Integer&gt; map = new LinkedHashMap&lt;&gt;();
+
+                // 2. Access Order (LRU Mode)
+                // 3rd argument 'true' enables access order.
+                // Iteration: Least Recently Accessed → Most Recently Accessed.
+                Map&lt;String, Integer&gt; lruMap = new LinkedHashMap&lt;&gt;(16, 0.75f, true);
+
+                // 3. LRU Cache Implementation (Anonymous Class Override)
+                // This uses "curly brackets" to override behavior inline.
+                Map&lt;String, Integer&gt; cache = new LinkedHashMap&lt;&gt;(16, 0.75f, true) {
+                    @Override
+                    protected boolean removeEldestEntry(Map.Entry&lt;String, Integer&gt; eldest) {
+                        // Automatically removes the "eldest" (LRU) entry when size > 100
+                        return size() > 100;
+                    }
+                };
+
+                // 4. "Custom" Sort (Pre-sorting Pattern)
+                // Since you cannot pass a Comparator, you must sort data EXTERNALLY,
+                // then insert it. The map will "freeze" that order.
+                List&lt;String&gt; sortedKeys = originalData.keySet().stream().sorted().toList();
+                for(String key : sortedKeys) {
+                    map.put(key, originalData.get(key));
+                }
+                </pre>
+
+                <h4>2. Internal Structure</h4>
+                <pre>
+                LinkedHashMap Internal Structure (Doubly-Linked List)
+
+                Each entry stores:
+                key, value
+                before → pointer to previous entry
+                after  → pointer to next entry
+
+
+                1) INSERTION ORDER EXAMPLE
+                -------------------------------------
+                put(A), put(B), put(C)
+
+                HEAD                                TAIL
+                    ↓                                   ↓
+                +-----+     +-----+     +-----+
+                |  A  | ↔→  |  B  | ↔→  |  C  |
+                +-----+     +-----+     +-----+
+
+                Iteration walks from HEAD to TAIL:
+                A → B → C
+
+
+                2) ACCESS ORDER MODE (accessOrder = true)
+                -----------------------------------------
+                Initial state:
+                HEAD → A ↔ B ↔ C → TAIL
+
+                Operation:
+                get(A)
+
+                Effect:
+                A is moved to the tail (most recently accessed)
+
+                HEAD → B ↔ C ↔ A → TAIL
+
+
+                3) ENTRY POINTERS (for clarity)
+                --------------------------------
+                Example: middle entry "B"
+
+                    before ===> A
+                    after  ===> C
+
+                        A ←——→ B ←——→ C
+
+                Head has before = null
+                Tail has after = null
+
+
+                4) LRU with LinkedHashMap
+                --------------------------
+                The "eldest" (LRU) entry is always at HEAD.
+
+                Example:
+                HEAD → B ↔ A ↔ C → TAIL
+
+                Eldest = B (evicted first)
+                Most recent = C
+                </pre>
+            </div>
+            <div class="map-section">
+                <h3>TreeMap</h3>
+                <p>An implementation of SortedMap using a Red-Black tree. It keeps keys in sorted order (according to
+                    their natural order or a custom Comparator), so iterations and queries follow sorted sequence. All
+                    basic operations (get, put, etc.) take O(log n) time due to tree traversal. TreeMap is ideal when
+                    you need ordered or range-based retrieval, such as finding the minimum, maximum, or next larger key
+                    quickly, or iterating keys in sorted sequence.</p>
+
+                <p>Common scenarios include implementing ordered indexes or schedulers – for example, mapping timestamps
+                    to tasks and querying the next event, or storing names to objects and retrieving in alphabetical
+                    order. TreeMap also implements <code>NavigableMap</code>, providing methods like
+                    <code>floorKey</code>, <code>ceilingKey</code>, <code>subMap</code> views, etc., which are very
+                    handy for range queries or finding nearest matches.
+                </p>
+
+                <p><strong>Use Case:</strong> Use TreeMap when consistent sorted order is required or when algorithms
+                    rely on ordered data (e.g. building a leaderboard by score, or a time-based cache that expires
+                    oldest entries by timestamp). The trade-off is slower operations (logarithmic time) and a bit more
+                    memory overhead than a hash-based map. Also, TreeMap does not allow null keys if using natural
+                    ordering (since comparison with null is undefined).</p>
+
+                <h4>1. Initialization & Custom Comparator</h4>
+                <p>
+                    <strong>Iteration Order:</strong> Iteration always starts from the "lowest" key (Head) and moves to
+                    the
+                    "highest" key (Tail) according to the comparison logic.
+                    <br>• <em>Ascending/Natural:</em> Smallest Key → Largest Key.
+                    <br>• <em>Custom:</em> Whatever defines "smaller" comes first.
+                </p>
+
+                <pre>
+                // 1. Natural Ordering (Keys must implement Comparable)
+                TreeMap&lt;Integer, String&gt; scores = new TreeMap&lt;&gt;();
+
+                // 2. Custom Comparator (Anonymous Inner Class)
+                // Scenario: User class has an internal 'Integer id' field.
+                // We want to sort Users by ID ascending.
+                
+                TreeMap&lt;User, String&gt; userMap = new TreeMap&lt;&gt;(new Comparator&lt;User&gt;() {
+                    @Override
+                    public int compare(User u1, User u2) {
+                        // Compare internal objects (e.g., Integer IDs)
+                        Integer id1 = u1.getId();
+                        Integer id2 = u2.getId();
+                        
+                        // Returns negative if id1 < id2, 0 if equal, positive if id1 > id2
+                        return id1.compareTo(id2); 
+                    }
+                });
+                </pre>
+
+                <h4>2. Range Queries & Views</h4>
+                <p>Unlike HashMap, you can create "views" of the map to handle subsets of data without copying elements.
+                </p>
+                <pre>
+                // Scenario: Map has keys [1, 2, 3, 4, 5, 10]
+
+                // 1. subMap(fromKey, inclusive, toKey, inclusive)
+                // Get range from 3 to 5.
+                NavigableMap&lt;Integer, String&gt; range = map.subMap(3, true, 5, true);
+                // Result: [3, 4, 5] (size() returns 3)
+
+                // 2. headMap(toKey, inclusive)
+                // Get all keys less than 3 (The "Head" of the map)
+                NavigableMap&lt;Integer, String&gt; head = map.headMap(3, false);
+                // Result: [1, 2]
+
+                // 3. tailMap(fromKey, inclusive)
+                // Get all keys from 5 onwards (The "Tail" of the map)
+                NavigableMap&lt;Integer, String&gt; tail = map.tailMap(5, true);
+                // Result: [5, 10]
+                </pre>
+
+                <h4>3. Unique Methods (NavigableMap)</h4>
+                <p>These methods are specific to TreeMap and relate to the sort order.</p>
+                <pre>
+                firstKey()       → Returns the first (lowest) key currently in the map.
+                lastKey()        → Returns the last (highest) key currently in the map.
+                
+                lowerKey(K key)  → Returns the greatest key strictly less than the given key.
+                floorKey(K key)  → Returns the greatest key less than or equal to the given key.
+                
+                ceilingKey(K key)→ Returns the least key greater than or equal to the given key.
+                higherKey(K key) → Returns the least key strictly greater than the given key.
+                
+                pollFirstEntry() → Removes and returns the key-value mapping associated with the least key.
+                </pre>
+            </div>
+            <div class="map-section">
+                <h3>ConcurrentHashMap</h3>
+                <p>A thread-safe Map designed for concurrent use, allowing safe retrievals and updates from multiple
+                    threads without external synchronization. Unlike Hashtable (an older synchronized Map) which locks
+                    the entire map for every operation, ConcurrentHashMap achieves high concurrency via finer-grained
+                    locking or lock-free techniques. It does not allow null keys or values (to avoid ambiguity in
+                    concurrency logic). The
+                    iteration order is undefined.</p>
+
+                <p><strong>Use Case:</strong> Ideal for shared caches, counters, or session stores where high
+                    concurrency is
+                    required. Use this over <code>Collections.synchronizedMap</code> when you have high thread
+                    contention.
+                    Atomic methods like <code>putIfAbsent</code>, <code>compute</code>, and <code>merge</code> should be
+                    used
+                    for compound operations to ensure thread safety.</p>
+
+                <h4>1. Internal Implementation (Java 8+)</h4>
+                <p>The "Fine-Grained Locking" mechanism works differently than older versions (Segments) to reduce
+                    memory footprint and improve performance.</p>
+                <ul>
+                    <li><strong>Bucket-Level Locking:</strong> Locking occurs <em>only</em> on the specific bucket
+                        (slot) in the array being modified, not the whole map.</li>
+                    <li><strong>Synchronized Block:</strong> When writing to a non-empty bucket, it locks the
+                        <strong>head node</strong> of that bucket using the <code>synchronized</code> keyword. Other
+                        threads can still access other buckets freely.</li>
+                    <li><strong>CAS (Compare-And-Swap):</strong> If a bucket is empty (null), it uses CAS (a
+                        hardware-level atomic operation) to insert the new node. This is lock-free and very fast.</li>
+                    <li><strong>TreeBin:</strong> If a bucket grows too large (default &gt; 8 items), it converts from a
+                        Linked List to a Red-Black Tree (TreeBin) for O(log n) performance.</li>
+                    <li><strong>Reads (Get):</strong> Retrieval operations are generally <strong>lock-free</strong> and
+                        do not block, relying on <code>volatile</code> references to ensure visibility of the latest
+                        data.</li>
+                </ul>
+
+                <h4>2. Initialization & Variations</h4>
+                <p>While standard initialization is common, variations exist to tune the concurrency level (shard
+                    count).</p>
+                <pre>
+                // 1. Standard Initialization
+                // Defaults: initialCapacity=16, loadFactor=0.75, concurrencyLevel=16
+                ConcurrentHashMap&lt;String, Session&gt; map = new ConcurrentHashMap&lt;&gt;();
+
+                // 2. Custom "Concurrency Level" (The Variation)
+                // Constructor: (initialCapacity, loadFactor, concurrencyLevel)
+                // 'concurrencyLevel': Establishes the estimated number of concurrently updating threads.
+                // In Java 8+, this is a hint to size the map to prevent resize contention.
+                ConcurrentHashMap&lt;String, Session&gt; heavyMap = new ConcurrentHashMap&lt;&gt;(128, 0.75f, 32);
+
+                // 3. From Another Map
+                ConcurrentHashMap&lt;String, Integer&gt; copy = new ConcurrentHashMap&lt;&gt;(otherMap);
+                </pre>
+
+                <h4>3. Important Restrictions</h4>
+                <pre>
+                NO NULLS ALLOWED:
+                map.put(key, null);   // Throws NullPointerException
+                map.put(null, value); // Throws NullPointerException
+                // Reason: In concurrent environments, 'null' return is ambiguous.
+                // (Does the key not exist? Or is the value null? We can't use containsKey() safely to check).
+                </pre>
+            </div>
+            <div class="map-section">
+                <h3>Collections.synchronizedMap()</h3>
+                <p>
+                    Not a separate map implementation, but a static utility method that wraps an existing Map
+                    (like HashMap or TreeMap) with a synchronization layer. It provides thread safety by wrapping
+                    every method call (get, put, size) in a <code>synchronized</code> block using the map itself
+                    as the mutex (lock).
+                </p>
+
+                <p>
+                    <strong>Performance Note:</strong> This uses "Coarse-Grained Locking." It acts like a single
+                    gatekeeper:
+                    only one thread can access the map at a time, even if they are accessing different keys.
+                    This creates a bottleneck under high contention compared to <code>ConcurrentHashMap</code>.
+                </p>
+
+                <h4>1. Initialization & Usage</h4>
+                <pre>
+                // 1. Wrapping a HashMap (Most Common)
+                // You must wrap it immediately during creation to prevent accidental non-safe access.
+                Map&lt;String, String&gt; syncMap = Collections.synchronizedMap(new HashMap&lt;&gt;());
+
+                // 2. Wrapping a TreeMap
+                // Preserves sorted order while adding thread safety.
+                Map&lt;Integer, String&gt; syncSortedMap = Collections.synchronizedMap(new TreeMap&lt;&gt;());
+
+                // 3. Basic Operations (Same as standard Map)
+                syncMap.put("Key", "Value"); // Thread-safe internally
+                syncMap.get("Key");          // Thread-safe internally
+                </pre>
+
+                <h4>2. CRITICAL: Iteration Handling</h4>
+                <p>
+                    Unlike <code>ConcurrentHashMap</code>, iterators returned by <code>synchronizedMap</code> are
+                    <strong>not</strong> thread-safe. You <strong>MUST</strong> manually synchronize on the map
+                    object when iterating, otherwise, you risk a <code>ConcurrentModificationException</code> if
+                    another thread modifies it during iteration.
+                </p>
+                <pre>
+                Map&lt;String, String&gt; map = Collections.synchronizedMap(new HashMap&lt;&gt;());
+
+                // CORRECT USAGE:
+                synchronized (map) {
+                    // Must be in a synchronized block on the map object
+                    for (String key : map.keySet()) {
+                        System.out.println(key + " : " + map.get(key));
+                    }
+                }
+                // Note: Any other thread trying to put() or get() will be blocked 
+                // until this loop finishes!
+                </pre>
+            </div>
+            <div class="map-section">
+                <h3>IdentityHashMap</h3>
+                <p>A special Map implementation that uses reference identity (<code>==</code>) instead of object
+                    equality
+                    (<code>equals()</code>) to compare keys. In an IdentityHashMap, two keys are considered the same
+                    entry only if they are literally the same object instance in memory. It is not a general-purpose map
+                    but is critical for specific systems tasks.</p>
+
+
+
+                <p><strong>Use Case:</strong>
+                    <br>• <strong>Serialization/Deep-Copying:</strong> Maintaining "node tables" to track circular
+                    references in object graphs (topology preservation).
+                    <br>• <strong>Proxy/Frameworks:</strong> associating metadata with specific object instances without
+                    relying on the object's implementation of <code>equals()</code>.
+                </p>
+
+                <p><strong>Trade-off:</strong> It violates the general <code>Map</code> interface contract regarding key
+                    behavior.
+                    It typically uses linear-probe addressing rather than chaining for its buckets, which can be faster
+                    for small sizes.</p>
+
+                <h4>1. Initialization & The "Duplicate" Key Scenario</h4>
+                <p>This is the standard interview example showing how it differs from HashMap.</p>
+                <pre>
+                // 1. Initialization
+                // Optional: 'expectedMaxSize' in constructor helps size the internal table
+                Map&lt;String, String&gt; identityMap = new IdentityHashMap&lt;&gt;();
+                Map&lt;String, String&gt; hashMap     = new HashMap&lt;&gt;();
+
+                // 2. The Setup
+                // Create two DISTINCT objects with the SAME value.
+                String key1 = new String("A");
+                String key2 = new String("A");
+
+                // Check references
+                // key1 == key2      → FALSE (Different memory addresses)
+                // key1.equals(key2) → TRUE  (Same content)
+
+                // 3. Behavior in HashMap (Uses .equals)
+                hashMap.put(key1, "First");
+                hashMap.put(key2, "Second"); // Overwrites "First" because keys are "equal"
+                // hashMap.size() → 1
+
+                // 4. Behavior in IdentityHashMap (Uses ==)
+                identityMap.put(key1, "First");
+                identityMap.put(key2, "Second"); // Adds NEW entry because addresses differ
+                // identityMap.size() → 2
+                </pre>
+
+                <h4>2. Mutable Keys Scenario</h4>
+                <p>Because <code>IdentityHashMap</code> does not look at the <em>content</em> of the key (only the
+                    memory address),
+                    it is one of the few Maps where "mutable keys" are somewhat safe (though still not recommended).</p>
+                <pre>
+                StringBuilder key = new StringBuilder("Start");
+                Map&lt;StringBuilder, String&gt; map = new IdentityHashMap&lt;&gt;();
+                
+                map.put(key, "Value");
+                
+                // Mutating the key object
+                key.append("_Changed"); 
+                
+                // In HashMap: This often breaks retrieval (hash code changes).
+                // In IdentityHashMap: Still works, because the memory address of 'key' hasn't changed.
+                System.out.println(map.get(key)); // Returns "Value"
+                </pre>
+
+                <h4>3. Internal Difference (Methods)</h4>
+                <p>While the method signatures (<code>put</code>, <code>get</code>) are standard, the internal mechanics
+                    differ significantly.</p>
+                <pre>
+                // How it hashes:
+                // It does NOT call key.hashCode(). 
+                // It calls System.identityHashCode(key).
+                
+                // How it compares:
+                // boolean isSame = (k1 == k2);
+                </pre>
+            </div>
+            <div class="map-section">
+                <h3>EnumMap</h3>
+                <p>A highly specialized map for enum keys. EnumMap requires that all keys
+                    come from a single Java enum type. It is internally represented as an <strong>array</strong> indexed
+                    by the
+                    ordinal values (integer position) of the enum constants. This makes EnumMap extremely fast and
+                    memory-efficient –
+                    much faster than a HashMap because it avoids hashing calculations entirely and uses direct array
+                    indexing (O(1)).</p>
+
+
+
+                <p>
+                    • <strong>Iteration Order:</strong> Guaranteed to be the <strong>natural order</strong> of the enum
+                    constants (the order they are declared in the Enum file).<br>
+                    • <strong>Nulls:</strong> Null keys are <strong>not</strong> permitted. Null values are allowed.
+                </p>
+
+                <p><strong>Use Case:</strong> Ideal for "fixed set" scenarios, such as mapping configuration states to
+                    handlers,
+                    days of the week to schedules, or database columns (if enums) to values. It communicates intent
+                    clearly:
+                    "This map only handles this specific set of keys."</p>
+
+                <h4>1. Initialization & Usage</h4>
+                <p><strong>Critical Requirement:</strong> You must pass the Enum <code>Class</code> type to the
+                    constructor so it knows how big to make the internal array.</p>
+                <pre>
+                // 0. The Enum
+                enum Status { PENDING, ACTIVE, INACTIVE, DELETED }
+
+                // 1. Initialization
+                // Must pass Status.class so it knows the key universe.
+                EnumMap&lt;Status, String&gt; statusMap = new EnumMap&lt;&gt;(Status.class);
+
+                // 2. Usage (Standard Map methods)
+                statusMap.put(Status.PENDING, "Waiting for user...");
+                statusMap.put(Status.ACTIVE, "User is online");
+
+                // 3. Iteration (Always follows declaration order: PENDING -> ACTIVE -> ...)
+                for (Status s : statusMap.keySet()) {
+                    System.out.println(s); 
+                }
+                </pre>
+
+                <h4>2. Internal Mechanics (Why it is so fast)</h4>
+                <p>It does not use buckets or hash codes. It uses the <code>ordinal()</code> of the enum as a direct
+                    array index.</p>
+                <pre>
+                // Conceptually, it looks like this:
+                // Object[] values = new Object[Status.values().length];
+
+                // When you call: map.put(Status.ACTIVE, "Val");
+                // It does: values[Status.ACTIVE.ordinal()] = "Val";
+                
+                // Status.ACTIVE.ordinal() is 1.
+                // So it writes to index 1 directly. No collisions, no rehashing.
+                </pre>
+
+                <h4>3. Strategy Pattern Example</h4>
+                <p>EnumMaps are excellent for replacing <code>if-else</code> or <code>switch</code> logic for
+                    strategies.</p>
+                <pre>
+                EnumMap&lt;Status, Runnable&gt; actions = new EnumMap&lt;&gt;(Status.class);
+                
+                // Map states to executable actions (Lambdas)
+                actions.put(Status.ACTIVE,   () -> System.out.println("Enable features"));
+                actions.put(Status.DELETED,  () -> System.out.println("Clean up files"));
+                
+                // Execute based on current state
+                actions.get(currentState).run();
+                </pre>
+            </div>
+            <section>
+                <div class="use-case">
+                    <h3>1. Designing Caches (LRU, LFU, etc.)</h3>
+
+                    <h4>LRU Cache with LinkedHashMap</h4>
+                    <pre><code>Map&lt;K,V&gt; cache = new LinkedHashMap&lt;K,V&gt;(maxSize, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry&lt;K,V&gt; eldest) {
+                    return size() > maxSize;
+                }
+            };</code></pre>
+                    <ul>
+                        <li><code>accessOrder=true</code> (3rd param) → get/put moves entry to end (most recent)</li>
+                        <li><code>removeEldestEntry()</code> called after every put → return true to auto-evict</li>
+                        <li>Front of list = least recent, Back = most recent</li>
+                    </ul>
+
+                    <h4>LRU Cache from Scratch</h4>
+                    <ul>
+                        <li>HashMap&lt;K, Node&gt; → O(1) key lookup</li>
+                        <li>Doubly-linked list → tracks usage order</li>
+                        <li>Node contains: key, value, prev, next pointers</li>
+                        <li>On access: move node to head</li>
+                        <li>On eviction: remove from tail</li>
+                        <li>On put (new key): add node to head, if over capacity → evict tail</li>
+                        <li>On put (existing key): update value, move to head</li>
+                    </ul>
+                    <h4>LFU Cache</h4>
+                    <ul>
+                        <li>Data structures:
+                            <ul>
+                                <li><code>Map&lt;K, V&gt; values</code> → key to value</li>
+                                <li><code>Map&lt;K, Integer&gt; counts</code> → key to frequency</li>
+                                <li><code>Map&lt;Integer, LinkedHashSet&lt;K&gt;&gt; freqBuckets</code> → freq to keys
+                                    (insertion-ordered)</li>
+                                <li><code>int minFreq</code> → current minimum frequency</li>
+                            </ul>
+                        </li>
+                        <li>GET flow:
+                            <ul>
+                                <li>Key not found → return -1</li>
+                                <li>Get current freq from <code>counts</code></li>
+                                <li>Remove key from <code>freqBuckets.get(freq)</code></li>
+                                <li>If that bucket now empty && freq == minFreq → minFreq++</li>
+                                <li>Add key to <code>freqBuckets.get(freq + 1)</code></li>
+                                <li>Update <code>counts.put(key, freq + 1)</code></li>
+                                <li>Return value</li>
+                            </ul>
+                        </li>
+                        <li>PUT flow:
+                            <ul>
+                                <li>Key exists → update value, call GET logic (increments freq)</li>
+                                <li>Key new + at capacity → evict first key from <code>freqBuckets.get(minFreq)</code>,
+                                    remove from all maps</li>
+                                <li>Insert new key: <code>values.put()</code>, <code>counts.put(key, 1)</code>, add to
+                                    <code>freqBuckets.get(1)</code></li>
+                                <li>Reset <code>minFreq = 1</code></li>
+                            </ul>
+                        </li>
+                        <li>Why LinkedHashSet? → maintains insertion order within same frequency (tie-breaker = oldest
+                            first)</li>
+                    </ul>
+
+                    <h4>TTL Cache</h4>
+                    <ul>
+                        <li>Data structures:
+                            <ul>
+                                <li><code>Map&lt;K, V&gt; cache</code> → key to value</li>
+                                <li><code>Map&lt;K, Long&gt; expiryTimes</code> → key to expiration timestamp</li>
+                                <li><code>TreeMap&lt;Long, Set&lt;K&gt;&gt; expiryQueue</code> → timestamp to keys
+                                    expiring at that time</li>
+                            </ul>
+                        </li>
+                        <li>PUT flow:
+                            <ul>
+                                <li>Calculate <code>expiryTime = System.currentTimeMillis() + ttlMillis</code></li>
+                                <li>Store in <code>cache</code> and <code>expiryTimes</code></li>
+                                <li>Add key to <code>expiryQueue.get(expiryTime)</code></li>
+                                <li>If key already existed → remove old entry from old expiry bucket first</li>
+                            </ul>
+                        </li>
+                        <li>GET flow:
+                            <ul>
+                                <li>Check <code>expiryTimes.get(key)</code> vs current time</li>
+                                <li>If expired → remove from all maps, return null</li>
+                                <li>If valid → return value (optionally refresh TTL)</li>
+                            </ul>
+                        </li>
+                        <li>Cleanup strategies:
+                            <ul>
+                                <li>Lazy: check expiry on each GET (stale data stays in memory)</li>
+                                <li>Eager: background thread polls <code>expiryQueue.firstEntry()</code>, removes if
+                                    timestamp ≤ now</li>
+                                <li>Hybrid: lazy GET + periodic batch cleanup</li>
+                            </ul>
+                        </li>
+                        <li>Alternative: <code>DelayQueue&lt;DelayedKey&gt;</code> → keys implement <code>Delayed</code>
+                            interface, queue auto-orders by expiry</li>
+                    </ul>
+
+                </div>
+                <div class="use-case">
+                    <h3>2. Preserving Order (Insertion or Access Order)</h3>
+
+                    <h4>LinkedHashMap Quick Reference</h4>
+                    <ul>
+                        <li><code>new LinkedHashMap&lt;&gt;()</code> → insertion order (default)</li>
+                        <li><code>new LinkedHashMap&lt;&gt;(capacity, loadFactor, true)</code> → access order</li>
+                        <li>Re-insert existing key → does NOT change position (insertion mode)</li>
+                        <li>To treat update as new insertion → <code>map.remove(key)</code> then
+                            <code>map.put(key, value)</code></li>
+                    </ul>
+
+                    <h4>Custom Order (e.g., Most Recently Modified)</h4>
+                    <ul>
+                        <li>No built-in Java Map for "modified order"</li>
+                        <li>Data structures:
+                            <ul>
+                                <li><code>Map&lt;K, V&gt; data</code> → key to value</li>
+                                <li><code>Map&lt;K, Long&gt; modifiedTime</code> → key to last modified timestamp</li>
+                                <li><code>TreeMap&lt;Long, Set&lt;K&gt;&gt; byModified</code> → timestamp to keys
+                                    (sorted order)</li>
+                            </ul>
+                        </li>
+                        <li>PUT flow:
+                            <ul>
+                                <li>If key exists → remove from old timestamp bucket in <code>byModified</code></li>
+                                <li><code>long now = System.currentTimeMillis()</code> (or incrementing counter for
+                                    same-ms precision)</li>
+                                <li>Update <code>data.put(key, value)</code></li>
+                                <li>Update <code>modifiedTime.put(key, now)</code></li>
+                                <li>Add key to <code>byModified.get(now)</code></li>
+                            </ul>
+                        </li>
+                        <li>GET by modified order:
+                            <ul>
+                                <li>Iterate <code>byModified.values()</code> → keys in oldest-to-newest modified order
+                                </li>
+                                <li>Or <code>byModified.descendingMap()</code> → newest-to-oldest</li>
+                            </ul>
+                        </li>
+                        <li>Alternative: <code>List&lt;K&gt; modifiedOrder</code> + re-sort on iteration (simpler but
+                            O(n log n) per iteration)</li>
+                    </ul>
+                </div>
+                <div class="use-case">
+                    <h3>3. Sorted Data and Range Queries</h3>
+
+                    <h4>TreeMap Ordering Requirements</h4>
+                    <ul>
+                        <li>Keys must be orderable via:
+                            <ul>
+                                <li>Natural ordering → key class implements <code>Comparable&lt;K&gt;</code></li>
+                                <li>Custom ordering → provide <code>Comparator&lt;K&gt;</code> to constructor</li>
+                            </ul>
+                        </li>
+                        <li>Null keys → disallowed with natural ordering (ambiguous position)</li>
+                    </ul>
+
+                    <h4>Option 1: Implement Comparable in Key Class</h4>
+                    <pre><code>class Task implements Comparable&lt;Task&gt; {
+                long executionTime;
+                String taskId;
+                
+                @Override
+                public int compareTo(Task other) {
+                    int cmp = Long.compare(this.executionTime, other.executionTime);
+                    if (cmp != 0) return cmp;
+                    return this.taskId.compareTo(other.taskId); // tie-breaker
+                }
+            }
+
+            TreeMap&lt;Task, Runnable&gt; scheduler = new TreeMap&lt;&gt;();</code></pre>
+                    <ul>
+                        <li>Return negative → this &lt; other</li>
+                        <li>Return zero → this == other (CAUTION: TreeMap treats as duplicate key)</li>
+                        <li>Return positive → this &gt; other</li>
+                        <li>Always include tie-breaker if primary field can have duplicates</li>
+                    </ul>
+
+                    <h4>Option 2: Provide Comparator to TreeMap</h4>
+                    <pre><code>// Lambda style
+            TreeMap&lt;String, Integer&gt; caseInsensitive = 
+                new TreeMap&lt;&gt;(String.CASE_INSENSITIVE_ORDER);
+
+            // Multi-field comparator
+            TreeMap&lt;Employee, Data&gt; byDeptThenSalary = new TreeMap&lt;&gt;(
+                Comparator.comparing(Employee::getDept)
+                        .thenComparing(Employee::getSalary)
+                        .thenComparing(Employee::getId) // tie-breaker
+            );
+
+            // Reverse order
+            TreeMap&lt;Integer, String&gt; descending = 
+                new TreeMap&lt;&gt;(Comparator.reverseOrder());
+
+            // Null-safe (nulls first or last)
+            TreeMap&lt;String, Integer&gt; nullsFirst = 
+                new TreeMap&lt;&gt;(Comparator.nullsFirst(Comparator.naturalOrder()));</code></pre>
+
+                    <h4>Comparator Chaining Methods</h4>
+                    <ul>
+                        <li><code>Comparator.comparing(keyExtractor)</code> → primary sort field</li>
+                        <li><code>.thenComparing(keyExtractor)</code> → secondary, tertiary, etc.</li>
+                        <li><code>.reversed()</code> → flip order</li>
+                        <li><code>Comparator.comparingInt/Long/Double()</code> → primitive specializations (avoids
+                            boxing)</li>
+                        <li><code>Comparator.nullsFirst()/nullsLast()</code> → wrap comparator to handle nulls</li>
+                    </ul>
+
+                    <h4>Common Gotcha: Comparator Consistency</h4>
+                    <ul>
+                        <li>If <code>compare(a, b) == 0</code>, TreeMap considers a and b the same key</li>
+                        <li>This can cause "lost" entries if comparator doesn't distinguish all keys</li>
+                        <li>Fix: always add unique tie-breaker (ID, timestamp, etc.)</li>
+                    </ul>
+                    <pre><code>// BAD: two users with same score = one gets overwritten
+            new TreeMap&lt;&gt;(Comparator.comparingInt(User::getScore));
+
+            // GOOD: score then unique ID
+            new TreeMap&lt;&gt;(Comparator.comparingInt(User::getScore)
+                                    .thenComparing(User::getId));</code></pre>
+
+                    <h4>Useful NavigableMap Methods</h4>
+                    <ul>
+                        <li><code>firstKey()</code> / <code>lastKey()</code> → min/max key</li>
+                        <li><code>firstEntry()</code> / <code>lastEntry()</code> → min/max entry</li>
+                        <li><code>higherKey(k)</code> → smallest key strictly &gt; k</li>
+                        <li><code>ceilingKey(k)</code> → smallest key &gt;= k</li>
+                        <li><code>lowerKey(k)</code> → largest key strictly &lt; k</li>
+                        <li><code>floorKey(k)</code> → largest key &lt;= k</li>
+                        <li><code>subMap(from, to)</code> → view of keys in [from, to)</li>
+                        <li><code>headMap(to)</code> → view of keys &lt; to</li>
+                        <li><code>tailMap(from)</code> → view of keys &gt;= from</li>
+                        <li><code>descendingMap()</code> → reverse-order view</li>
+                    </ul>
+                </div>
+                <div class="use-case">
+                    <h3>4. Concurrency and Thread-Safe Maps</h3>
+
+                    <h4>Thread-Safe Map Options</h4>
+                    <ul>
+                        <li><code>ConcurrentHashMap</code> → fine-grained locking (bucket-level), high throughput</li>
+                        <li><code>Collections.synchronizedMap(map)</code> → single global lock, simple but slow</li>
+                        <li><code>Hashtable</code> → legacy, single lock, avoid in new code</li>
+                    </ul>
+
+                    <h4>ConcurrentHashMap Key Points</h4>
+                    <ul>
+                        <li>No null keys or values allowed (throws NullPointerException)</li>
+                        <li>Iterators are weakly consistent → no ConcurrentModificationException, may or may not reflect
+                            concurrent changes</li>
+                        <li>All single-key operations are atomic: <code>get</code>, <code>put</code>,
+                            <code>remove</code>, <code>putIfAbsent</code>, etc.</li>
+                    </ul>
+
+                    <h4>CHM Removal Operations</h4>
+                    <pre><code>ConcurrentHashMap&lt;String, Session&gt; sessions = new ConcurrentHashMap&lt;&gt;();
+
+            // Basic remove - atomic, O(1)
+            sessions.remove(key);
+
+            // Conditional remove - atomic, only removes if value matches
+            boolean removed = sessions.remove(key, expectedValue);
+
+            // Remove while iterating - SAFE with CHM iterators
+            sessions.forEach((k, v) -> {
+                if (v.isExpired()) {
+                    sessions.remove(k); // safe, no ConcurrentModificationException
+                }
+            });
+
+            // Bulk conditional removal
+            sessions.entrySet().removeIf(e -> e.getValue().isExpired());
+
+            // Compute-based removal (atomic read-modify-write)
+            sessions.computeIfPresent(key, (k, v) -> {
+                return v.isExpired() ? null : v; // return null = remove
+            });</code></pre>
+                    <ul>
+                        <li>All above operations are thread-safe</li>
+                        <li><code>remove(key)</code> → returns removed value or null</li>
+                        <li><code>remove(key, value)</code> → returns boolean, atomic check-then-remove</li>
+                        <li><code>computeIfPresent</code> returning null → atomically removes entry</li>
+                        <li>Bulk operations (<code>forEach</code>, <code>removeIf</code>) → not atomic as a whole, but
+                            each individual operation is safe</li>
+                    </ul>
+
+                    <h4>ConcurrentSkipListMap (Sorted + Concurrent)</h4>
+                    <ul>
+                        <li>Skip-list based → O(log n) for all operations</li>
+                        <li>Thread-safe sorted map (like TreeMap but concurrent)</li>
+                        <li>Implements <code>ConcurrentNavigableMap</code></li>
+                        <li>Weakly consistent iterators (same as CHM)</li>
+                        <li>Null keys/values not allowed</li>
+                    </ul>
+
+                    <h4>ConcurrentSkipListMap Initialization</h4>
+                    <pre><code>// Natural ordering (key must implement Comparable)
+            ConcurrentSkipListMap&lt;Integer, String&gt; natural = new ConcurrentSkipListMap&lt;&gt;();
+
+            // Custom comparator
+            ConcurrentSkipListMap&lt;String, Integer&gt; caseInsensitive = 
+                new ConcurrentSkipListMap&lt;&gt;(String.CASE_INSENSITIVE_ORDER);
+
+            // Multi-field comparator with custom objects
+            ConcurrentSkipListMap&lt;Order, OrderData&gt; orderBook = new ConcurrentSkipListMap&lt;&gt;(
+                Comparator.comparingDouble(Order::getPrice)
+                        .thenComparing(Order::getTimestamp)
+                        .thenComparing(Order::getOrderId) // unique tie-breaker required
+            );
+
+            // Reverse order
+            ConcurrentSkipListMap&lt;Long, Event&gt; newestFirst = 
+                new ConcurrentSkipListMap&lt;&gt;(Comparator.reverseOrder());
+
+            // From existing map
+            ConcurrentSkipListMap&lt;K, V&gt; fromMap = new ConcurrentSkipListMap&lt;&gt;(existingMap);</code></pre>
+
+                    <h4>ConcurrentSkipListMap Common Methods</h4>
+                    <ul>
+                        <li>Basic: <code>get</code>, <code>put</code>, <code>remove</code>, <code>containsKey</code>
+                        </li>
+                        <li>Atomic:
+                            <ul>
+                                <li><code>putIfAbsent(k, v)</code> → insert only if key absent</li>
+                                <li><code>remove(k, v)</code> → remove only if maps to value</li>
+                                <li><code>replace(k, oldV, newV)</code> → CAS-style update</li>
+                                <li><code>computeIfAbsent</code>, <code>computeIfPresent</code>, <code>compute</code>,
+                                    <code>merge</code></li>
+                            </ul>
+                        </li>
+                        <li>Navigation (all thread-safe):
+                            <ul>
+                                <li><code>firstKey()</code> / <code>lastKey()</code></li>
+                                <li><code>firstEntry()</code> / <code>lastEntry()</code> → also
+                                    <code>pollFirstEntry()</code> / <code>pollLastEntry()</code> (atomic remove +
+                                    return)</li>
+                                <li><code>higherKey(k)</code> / <code>ceilingKey(k)</code></li>
+                                <li><code>lowerKey(k)</code> / <code>floorKey(k)</code></li>
+                                <li><code>subMap(from, to)</code>, <code>headMap(to)</code>, <code>tailMap(from)</code>
+                                </li>
+                                <li><code>descendingMap()</code> → reverse-order view</li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <pre><code>// Example: Real-time order book operations
+            ConcurrentSkipListMap&lt;Double, List&lt;Order&gt;&gt; buyOrders = 
+                new ConcurrentSkipListMap&lt;&gt;(Comparator.reverseOrder()); // highest price first
+
+            // Get best bid
+            Map.Entry&lt;Double, List&lt;Order&gt;&gt; bestBid = buyOrders.firstEntry();
+
+            // Get all bids >= $100
+            NavigableMap&lt;Double, List&lt;Order&gt;&gt; above100 = buyOrders.headMap(100.0, true);
+
+            // Atomic poll (for matching engine)
+            Map.Entry&lt;Double, List&lt;Order&gt;&gt; matched = buyOrders.pollFirstEntry();</code></pre>
+                </div>
+                <div class="use-case">
+                    <h3>5. Memory-Sensitive Maps and Avoiding Memory Leaks</h3>
+
+                    <h4>WeakHashMap Overview</h4>
+                    <ul>
+                        <li>Entry auto-removed when key has no strong references elsewhere</li>
+                        <li>GC triggers cleanup → key unreachable = entry gone</li>
+                        <li>Use case: metadata/cache tied to object lifecycle</li>
+                    </ul>
+
+                    <h4>Initialization</h4>
+                    <pre><code>// Basic
+            WeakHashMap&lt;Key, Value&gt; cache = new WeakHashMap&lt;&gt;();
+
+            // With initial capacity
+            WeakHashMap&lt;Key, Value&gt; cache = new WeakHashMap&lt;&gt;(100);
+
+            // With capacity and load factor
+            WeakHashMap&lt;Key, Value&gt; cache = new WeakHashMap&lt;&gt;(100, 0.75f);
+
+            // Thread-safe wrapper (if needed)
+            Map&lt;Key, Value&gt; syncCache = Collections.synchronizedMap(new WeakHashMap&lt;&gt;());</code></pre>
+
+                    <h4>Usage Examples</h4>
+                    <pre><code>// Example 1: Metadata cache tied to object lifecycle
+            WeakHashMap&lt;User, UserStats&gt; userStatsCache = new WeakHashMap&lt;&gt;();
+
+            User user = new User("john");
+            userStatsCache.put(user, computeStats(user));
+
+            // Later: if user goes out of scope and no other refs exist
+            user = null;
+            System.gc(); // entry eventually removed automatically
+
+            // Example 2: Canonicalization / interning
+            WeakHashMap&lt;String, String&gt; internPool = new WeakHashMap&lt;&gt;();
+
+            public String intern(String s) {
+                String existing = internPool.get(s);
+                if (existing != null) return existing;
+                internPool.put(s, s);
+                return s;
+            }
+
+            // Example 3: Listener/observer registry (auto-cleanup dead listeners)
+            WeakHashMap&lt;EventListener, Void&gt; listeners = new WeakHashMap&lt;&gt;();
+
+            public void addListener(EventListener l) {
+                listeners.put(l, null); // using as WeakHashSet
+            }
+
+            public void fireEvent(Event e) {
+                for (EventListener l : listeners.keySet()) {
+                    l.onEvent(e); // dead listeners auto-removed
+                }
+            }</code></pre>
+
+                    <h4>Caveats</h4>
+                    <ul>
+                        <li>NOT thread-safe → wrap with <code>Collections.synchronizedMap()</code> if concurrent</li>
+                        <li>Only keys are weak → values held strongly until key is collected</li>
+                        <li>String literals as keys → never collected (interned), entries persist forever</li>
+                        <li>Cleanup timing is non-deterministic → depends on GC</li>
+                    </ul>
+
+                    <h4>Weak Keys vs Soft Values</h4>
+                    <ul>
+                        <li><code>WeakHashMap</code> → weak keys (entry removed when key unreachable)</li>
+                        <li>No built-in WeakValueMap or SoftValueMap</li>
+                        <li>For weak/soft values → manual implementation:</li>
+                    </ul>
+                    <pre><code>// Soft value cache (values cleared under memory pressure)
+            Map&lt;String, SoftReference&lt;BigImage&gt;&gt; imageCache = new HashMap&lt;&gt;();
+
+            public BigImage getImage(String path) {
+                SoftReference&lt;BigImage&gt; ref = imageCache.get(path);
+                BigImage img = (ref != null) ? ref.get() : null;
+                
+                if (img == null) {
+                    img = loadImage(path);
+                    imageCache.put(path, new SoftReference&lt;&gt;(img));
+                }
+                return img;
+            }
+
+            // WeakReference vs SoftReference:
+            // - WeakReference: collected on next GC if no strong refs
+            // - SoftReference: collected only under memory pressure (better for caches)</code></pre>
+
+                    <h4>Common Memory Leak Patterns to Avoid</h4>
+                    <ul>
+                        <li>Static maps that only grow → add eviction or use WeakHashMap</li>
+                        <li>Listeners/callbacks never unregistered → use weak references</li>
+                        <li>Cache entries never expired → add TTL or size limit</li>
+                    </ul>
+                </div>
+
+                <div class="use-case">
+                    <h3>6. Custom Map Implementations & Advanced Patterns</h3>
+
+                    <li
+                        style="margin-bottom: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px; list-style-type: none;">
+                        <h2 style="color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px;">1.
+                            Implementing a HashMap from Scratch</h2>
+
+                        <h3 style="color: #27ae60;">📖 English Explanation</h3>
+                        <div style="background: #fff; padding: 15px; border-left: 4px solid #27ae60; margin: 10px 0;">
+                            <p><strong>What is a HashMap?</strong></p>
+                            <p>A HashMap is a data structure that stores key-value pairs and provides O(1) average time
+                                complexity for insertion, deletion, and lookup operations. It works by:</p>
+                            <ol>
+                                <li><strong>Hashing:</strong> Converting a key into an integer (hash code), then mapping
+                                    that integer to an index in an array (bucket index).</li>
+                                <li><strong>Buckets:</strong> An array where each slot can hold multiple entries (to
+                                    handle collisions).</li>
+                                <li><strong>Collision Handling:</strong> When two different keys hash to the same
+                                    bucket, we store them in a linked list (chaining) at that bucket.</li>
+                                <li><strong>Resizing:</strong> When the map gets too full (load factor exceeded), we
+                                    double the array size and rehash all entries.</li>
+                            </ol>
+                            <p><strong>Key Components:</strong></p>
+                            <ul>
+                                <li><code>buckets[]</code> - Array of linked lists</li>
+                                <li><code>size</code> - Current number of key-value pairs</li>
+                                <li><code>capacity</code> - Current array length</li>
+                                <li><code>loadFactor</code> - Threshold (default 0.75) for when to resize</li>
+                            </ul>
+                        </div>
+
+                        <h3 style="color: #8e44ad;">🔄 Pseudocode with Step-by-Step Diagrams</h3>
+                        <div
+                            style="background: #2d2d2d; color: #f8f8f2; padding: 20px; border-radius: 5px; overflow-x: auto; margin: 10px 0;">
+                            <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 14px;">
+<span style="color: #66d9ef;">╔══════════════════════════════════════════════════════════════════╗</span>
+<span style="color: #66d9ef;">║</span>                    <span style="color: #f92672;">HASHMAP STRUCTURE</span>                              <span style="color: #66d9ef;">║</span>
+<span style="color: #66d9ef;">╚══════════════════════════════════════════════════════════════════╝</span>
+
+<span style="color: #75715e;">// Entry Node Structure (each node in the linked list)</span>
+<span style="color: #a6e22e;">Entry:</span>
+    key         <span style="color: #75715e;">// The key object</span>
+    value       <span style="color: #75715e;">// The value object</span>
+    hash        <span style="color: #75715e;">// Cached hash code of the key</span>
+    next        <span style="color: #75715e;">// Pointer to next Entry (for chaining)</span>
+
+<span style="color: #75715e;">// HashMap Structure</span>
+<span style="color: #a6e22e;">HashMap:</span>
+    buckets[]   <span style="color: #75715e;">// Array of Entry (head of each chain)</span>
+    size        <span style="color: #75715e;">// Number of key-value pairs</span>
+    capacity    <span style="color: #75715e;">// Length of buckets array</span>
+    loadFactor  <span style="color: #75715e;">// Default 0.75</span>
+
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+<span style="color: #f92672;">OPERATION: PUT(key, value)</span>
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+
+<span style="color: #a6e22e;">STEP 1:</span> Calculate bucket index
+    hash = key.hashCode()
+    index = hash % capacity
+    
+<span style="color: #a6e22e;">STEP 2:</span> Search bucket for existing key
+    current = buckets[index]
+    WHILE current != null:
+        IF current.key.equals(key):
+            oldValue = current.value
+            current.value = value    <span style="color: #75715e;">// Update existing</span>
+            RETURN oldValue
+        current = current.next
+        
+<span style="color: #a6e22e;">STEP 3:</span> Key not found - insert new Entry at head
+    newEntry = new Entry(key, value, hash)
+    newEntry.next = buckets[index]   <span style="color: #75715e;">// Link to existing chain</span>
+    buckets[index] = newEntry        <span style="color: #75715e;">// New head</span>
+    size++
+    
+<span style="color: #a6e22e;">STEP 4:</span> Check if resize needed
+    IF size > capacity * loadFactor:
+        resize()
+
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+<span style="color: #e6db74;">EXAMPLE: Adding entries to HashMap with capacity=4</span>
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+
+<span style="color: #fd971f;">Initial State:</span>
+┌─────────────────────────────────────┐
+│ buckets[0] → null                   │
+│ buckets[1] → null                   │
+│ buckets[2] → null                   │
+│ buckets[3] → null                   │
+│ size = 0, capacity = 4              │
+└─────────────────────────────────────┘
+
+<span style="color: #fd971f;">After put("apple", 100):</span>  hash("apple") % 4 = 1
+┌─────────────────────────────────────┐
+│ buckets[0] → null                   │
+│ buckets[1] → [apple:100] → null     │
+│ buckets[2] → null                   │
+│ buckets[3] → null                   │
+│ size = 1                            │
+└─────────────────────────────────────┘
+
+<span style="color: #fd971f;">After put("banana", 200):</span>  hash("banana") % 4 = 2
+┌─────────────────────────────────────┐
+│ buckets[0] → null                   │
+│ buckets[1] → [apple:100] → null     │
+│ buckets[2] → [banana:200] → null    │
+│ buckets[3] → null                   │
+│ size = 2                            │
+└─────────────────────────────────────┘
+
+<span style="color: #fd971f;">After put("cherry", 300):</span>  hash("cherry") % 4 = 1  <span style="color: #e6db74;">(COLLISION!)</span>
+┌─────────────────────────────────────────────────┐
+│ buckets[0] → null                               │
+│ buckets[1] → [cherry:300] → [apple:100] → null  │  <span style="color: #e6db74;">← Chained!</span>
+│ buckets[2] → [banana:200] → null                │
+│ buckets[3] → null                               │
+│ size = 3                                        │
+└─────────────────────────────────────────────────┘
+
+<span style="color: #fd971f;">After put("date", 400):</span>  size(4) > 4*0.75=3  →  <span style="color: #f92672;">RESIZE TRIGGERED!</span>
+
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+<span style="color: #f92672;">OPERATION: RESIZE()</span>
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+
+<span style="color: #a6e22e;">STEP 1:</span> Double capacity
+    newCapacity = capacity * 2
+    newBuckets = new Entry[newCapacity]
+    
+<span style="color: #a6e22e;">STEP 2:</span> Rehash all entries
+    FOR each bucket in old buckets:
+        current = bucket
+        WHILE current != null:
+            next = current.next
+            newIndex = current.hash % newCapacity
+            current.next = newBuckets[newIndex]
+            newBuckets[newIndex] = current
+            current = next
+            
+<span style="color: #a6e22e;">STEP 3:</span> Replace buckets array
+    buckets = newBuckets
+    capacity = newCapacity
+
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+<span style="color: #e6db74;">After RESIZE (capacity 4 → 8):</span>
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+┌─────────────────────────────────────┐
+│ buckets[0] → null                   │
+│ buckets[1] → [apple:100] → null     │  <span style="color: #e6db74;">← hash % 8 = 1</span>
+│ buckets[2] → [banana:200] → null    │
+│ buckets[3] → null                   │
+│ buckets[4] → [date:400] → null      │
+│ buckets[5] → [cherry:300] → null    │  <span style="color: #e6db74;">← hash % 8 = 5 (no more collision!)</span>
+│ buckets[6] → null                   │
+│ buckets[7] → null                   │
+│ size = 4, capacity = 8              │
+└─────────────────────────────────────┘
+
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+<span style="color: #f92672;">OPERATION: GET(key)</span>
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+
+<span style="color: #a6e22e;">STEP 1:</span> Calculate bucket index
+    hash = key.hashCode()
+    index = hash % capacity
+    
+<span style="color: #a6e22e;">STEP 2:</span> Search the chain
+    current = buckets[index]
+    WHILE current != null:
+        IF current.hash == hash AND current.key.equals(key):
+            RETURN current.value
+        current = current.next
+    RETURN null  <span style="color: #75715e;">// Not found</span>
+
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+<span style="color: #e6db74;">EXAMPLE: get("cherry")</span>
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+    hash("cherry") % 8 = 5
+    buckets[5] → [cherry:300]
+    "cherry".equals("cherry") → TRUE
+    RETURN 300 ✓
+
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+<span style="color: #f92672;">OPERATION: REMOVE(key)</span>
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+
+<span style="color: #a6e22e;">STEP 1:</span> Calculate bucket index
+    index = key.hashCode() % capacity
+    
+<span style="color: #a6e22e;">STEP 2:</span> Find and unlink the entry
+    prev = null
+    current = buckets[index]
+    WHILE current != null:
+        IF current.key.equals(key):
+            IF prev == null:
+                buckets[index] = current.next  <span style="color: #75715e;">// Remove head</span>
+            ELSE:
+                prev.next = current.next       <span style="color: #75715e;">// Bypass current</span>
+            size--
+            RETURN current.value
+        prev = current
+        current = current.next
+    RETURN null
+</pre>
+                        </div>
+
+                        <h3 style="color: #e74c3c;">💻 Complete Java Implementation</h3>
+                        <div
+                            style="background: #1e1e1e; color: #dcdcdc; padding: 20px; border-radius: 5px; overflow-x: auto; margin: 10px 0;">
+                            <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px;">
+<span style="color: #608b4e;">/**
+ * Custom HashMap Implementation
+ * Features: Put, Get, Remove, Resize with Load Factor
+ * Collision handling: Separate Chaining (Linked List)
+ */</span>
+<span style="color: #569cd6;">public class</span> <span style="color: #4ec9b0;">MyHashMap</span>&lt;<span style="color: #4ec9b0;">K</span>, <span style="color: #4ec9b0;">V</span>&gt; {
+    
+    <span style="color: #608b4e;">// Inner class representing each entry in the map</span>
+    <span style="color: #569cd6;">private static class</span> <span style="color: #4ec9b0;">Entry</span>&lt;<span style="color: #4ec9b0;">K</span>, <span style="color: #4ec9b0;">V</span>&gt; {
+        <span style="color: #569cd6;">final</span> K key;
+        V value;
+        <span style="color: #569cd6;">final int</span> hash;      <span style="color: #608b4e;">// Cached hash for performance</span>
+        Entry&lt;K, V&gt; next;    <span style="color: #608b4e;">// Next entry in chain</span>
+        
+        Entry(K key, V value, <span style="color: #569cd6;">int</span> hash, Entry&lt;K, V&gt; next) {
+            <span style="color: #569cd6;">this</span>.key = key;
+            <span style="color: #569cd6;">this</span>.value = value;
+            <span style="color: #569cd6;">this</span>.hash = hash;
+            <span style="color: #569cd6;">this</span>.next = next;
+        }
+    }
+    
+    <span style="color: #608b4e;">// Constants</span>
+    <span style="color: #569cd6;">private static final int</span> DEFAULT_CAPACITY = <span style="color: #b5cea8;">16</span>;
+    <span style="color: #569cd6;">private static final float</span> DEFAULT_LOAD_FACTOR = <span style="color: #b5cea8;">0.75f</span>;
+    
+    <span style="color: #608b4e;">// Instance variables</span>
+    <span style="color: #569cd6;">private</span> Entry&lt;K, V&gt;[] buckets;
+    <span style="color: #569cd6;">private int</span> size;
+    <span style="color: #569cd6;">private int</span> capacity;
+    <span style="color: #569cd6;">private final float</span> loadFactor;
+    <span style="color: #569cd6;">private int</span> threshold;  <span style="color: #608b4e;">// capacity * loadFactor</span>
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// CONSTRUCTORS</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">public</span> <span style="color: #dcdcaa;">MyHashMap</span>() {
+        <span style="color: #569cd6;">this</span>(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
+    }
+    
+    <span style="color: #569cd6;">public</span> <span style="color: #dcdcaa;">MyHashMap</span>(<span style="color: #569cd6;">int</span> initialCapacity) {
+        <span style="color: #569cd6;">this</span>(initialCapacity, DEFAULT_LOAD_FACTOR);
+    }
+    
+    <span style="color: #569cd6;">@SuppressWarnings</span>(<span style="color: #ce9178;">"unchecked"</span>)
+    <span style="color: #569cd6;">public</span> <span style="color: #dcdcaa;">MyHashMap</span>(<span style="color: #569cd6;">int</span> initialCapacity, <span style="color: #569cd6;">float</span> loadFactor) {
+        <span style="color: #569cd6;">if</span> (initialCapacity &lt;= <span style="color: #b5cea8;">0</span>) {
+            <span style="color: #569cd6;">throw new</span> IllegalArgumentException(<span style="color: #ce9178;">"Capacity must be positive"</span>);
+        }
+        <span style="color: #569cd6;">if</span> (loadFactor &lt;= <span style="color: #b5cea8;">0</span> || Float.isNaN(loadFactor)) {
+            <span style="color: #569cd6;">throw new</span> IllegalArgumentException(<span style="color: #ce9178;">"Invalid load factor"</span>);
+        }
+        
+        <span style="color: #608b4e;">// Round up to nearest power of 2 for efficient modulo</span>
+        <span style="color: #569cd6;">this</span>.capacity = tableSizeFor(initialCapacity);
+        <span style="color: #569cd6;">this</span>.loadFactor = loadFactor;
+        <span style="color: #569cd6;">this</span>.threshold = (<span style="color: #569cd6;">int</span>) (capacity * loadFactor);
+        <span style="color: #569cd6;">this</span>.buckets = <span style="color: #569cd6;">new</span> Entry[capacity];
+        <span style="color: #569cd6;">this</span>.size = <span style="color: #b5cea8;">0</span>;
+    }
+    
+    <span style="color: #608b4e;">// Returns nearest power of 2 >= cap</span>
+    <span style="color: #569cd6;">private int</span> <span style="color: #dcdcaa;">tableSizeFor</span>(<span style="color: #569cd6;">int</span> cap) {
+        <span style="color: #569cd6;">int</span> n = cap - <span style="color: #b5cea8;">1</span>;
+        n |= n >>> <span style="color: #b5cea8;">1</span>;
+        n |= n >>> <span style="color: #b5cea8;">2</span>;
+        n |= n >>> <span style="color: #b5cea8;">4</span>;
+        n |= n >>> <span style="color: #b5cea8;">8</span>;
+        n |= n >>> <span style="color: #b5cea8;">16</span>;
+        <span style="color: #569cd6;">return</span> (n &lt; <span style="color: #b5cea8;">0</span>) ? <span style="color: #b5cea8;">1</span> : (n >= Integer.MAX_VALUE) ? Integer.MAX_VALUE : n + <span style="color: #b5cea8;">1</span>;
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// HASH FUNCTION</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #608b4e;">/**
+     * Computes hash with additional spreading to reduce collisions.
+     * Uses XOR of high bits to spread hash values better.
+     */</span>
+    <span style="color: #569cd6;">private int</span> <span style="color: #dcdcaa;">hash</span>(Object key) {
+        <span style="color: #569cd6;">if</span> (key == <span style="color: #569cd6;">null</span>) {
+            <span style="color: #569cd6;">return</span> <span style="color: #b5cea8;">0</span>;
+        }
+        <span style="color: #569cd6;">int</span> h = key.hashCode();
+        <span style="color: #608b4e;">// Spread bits to reduce collision in lower bits</span>
+        <span style="color: #569cd6;">return</span> h ^ (h >>> <span style="color: #b5cea8;">16</span>);
+    }
+    
+    <span style="color: #608b4e;">// Get bucket index using bitwise AND (faster than modulo)</span>
+    <span style="color: #569cd6;">private int</span> <span style="color: #dcdcaa;">getBucketIndex</span>(<span style="color: #569cd6;">int</span> hash) {
+        <span style="color: #569cd6;">return</span> hash & (capacity - <span style="color: #b5cea8;">1</span>);  <span style="color: #608b4e;">// Works because capacity is power of 2</span>
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// PUT OPERATION</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #608b4e;">/**
+     * Inserts or updates a key-value pair.
+     * @return Previous value if key existed, null otherwise
+     */</span>
+    <span style="color: #569cd6;">public</span> V <span style="color: #dcdcaa;">put</span>(K key, V value) {
+        <span style="color: #569cd6;">int</span> hash = hash(key);
+        <span style="color: #569cd6;">int</span> index = getBucketIndex(hash);
+        
+        <span style="color: #608b4e;">// Step 1: Search for existing key in the chain</span>
+        Entry&lt;K, V&gt; current = buckets[index];
+        <span style="color: #569cd6;">while</span> (current != <span style="color: #569cd6;">null</span>) {
+            <span style="color: #608b4e;">// Check hash first (fast), then equals (slower)</span>
+            <span style="color: #569cd6;">if</span> (current.hash == hash && 
+                (current.key == key || (key != <span style="color: #569cd6;">null</span> && key.equals(current.key)))) {
+                <span style="color: #608b4e;">// Key found - update value</span>
+                V oldValue = current.value;
+                current.value = value;
+                <span style="color: #569cd6;">return</span> oldValue;
+            }
+            current = current.next;
+        }
+        
+        <span style="color: #608b4e;">// Step 2: Key not found - add new entry at head of chain</span>
+        Entry&lt;K, V&gt; newEntry = <span style="color: #569cd6;">new</span> Entry&lt;&gt;(key, value, hash, buckets[index]);
+        buckets[index] = newEntry;
+        size++;
+        
+        <span style="color: #608b4e;">// Step 3: Resize if threshold exceeded</span>
+        <span style="color: #569cd6;">if</span> (size > threshold) {
+            resize();
+        }
+        
+        <span style="color: #569cd6;">return null</span>;
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// GET OPERATION</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #608b4e;">/**
+     * Retrieves value for given key.
+     * @return Value if found, null otherwise
+     */</span>
+    <span style="color: #569cd6;">public</span> V <span style="color: #dcdcaa;">get</span>(K key) {
+        <span style="color: #569cd6;">int</span> hash = hash(key);
+        <span style="color: #569cd6;">int</span> index = getBucketIndex(hash);
+        
+        Entry&lt;K, V&gt; current = buckets[index];
+        <span style="color: #569cd6;">while</span> (current != <span style="color: #569cd6;">null</span>) {
+            <span style="color: #569cd6;">if</span> (current.hash == hash && 
+                (current.key == key || (key != <span style="color: #569cd6;">null</span> && key.equals(current.key)))) {
+                <span style="color: #569cd6;">return</span> current.value;
+            }
+            current = current.next;
+        }
+        <span style="color: #569cd6;">return null</span>;
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// CONTAINS KEY</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">public boolean</span> <span style="color: #dcdcaa;">containsKey</span>(K key) {
+        <span style="color: #569cd6;">int</span> hash = hash(key);
+        <span style="color: #569cd6;">int</span> index = getBucketIndex(hash);
+        
+        Entry&lt;K, V&gt; current = buckets[index];
+        <span style="color: #569cd6;">while</span> (current != <span style="color: #569cd6;">null</span>) {
+            <span style="color: #569cd6;">if</span> (current.hash == hash && 
+                (current.key == key || (key != <span style="color: #569cd6;">null</span> && key.equals(current.key)))) {
+                <span style="color: #569cd6;">return true</span>;
+            }
+            current = current.next;
+        }
+        <span style="color: #569cd6;">return false</span>;
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// REMOVE OPERATION</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #608b4e;">/**
+     * Removes entry for given key.
+     * @return Removed value if found, null otherwise
+     */</span>
+    <span style="color: #569cd6;">public</span> V <span style="color: #dcdcaa;">remove</span>(K key) {
+        <span style="color: #569cd6;">int</span> hash = hash(key);
+        <span style="color: #569cd6;">int</span> index = getBucketIndex(hash);
+        
+        Entry&lt;K, V&gt; prev = <span style="color: #569cd6;">null</span>;
+        Entry&lt;K, V&gt; current = buckets[index];
+        
+        <span style="color: #569cd6;">while</span> (current != <span style="color: #569cd6;">null</span>) {
+            <span style="color: #569cd6;">if</span> (current.hash == hash && 
+                (current.key == key || (key != <span style="color: #569cd6;">null</span> && key.equals(current.key)))) {
+                <span style="color: #608b4e;">// Found - remove from chain</span>
+                <span style="color: #569cd6;">if</span> (prev == <span style="color: #569cd6;">null</span>) {
+                    <span style="color: #608b4e;">// Removing head of chain</span>
+                    buckets[index] = current.next;
+                } <span style="color: #569cd6;">else</span> {
+                    <span style="color: #608b4e;">// Bypass current node</span>
+                    prev.next = current.next;
+                }
+                size--;
+                <span style="color: #569cd6;">return</span> current.value;
+            }
+            prev = current;
+            current = current.next;
+        }
+        <span style="color: #569cd6;">return null</span>;
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// RESIZE OPERATION (REHASHING)</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">@SuppressWarnings</span>(<span style="color: #ce9178;">"unchecked"</span>)
+    <span style="color: #569cd6;">private void</span> <span style="color: #dcdcaa;">resize</span>() {
+        Entry&lt;K, V&gt;[] oldBuckets = buckets;
+        <span style="color: #569cd6;">int</span> oldCapacity = capacity;
+        
+        <span style="color: #608b4e;">// Double the capacity</span>
+        capacity = oldCapacity * <span style="color: #b5cea8;">2</span>;
+        threshold = (<span style="color: #569cd6;">int</span>) (capacity * loadFactor);
+        buckets = <span style="color: #569cd6;">new</span> Entry[capacity];
+        
+        <span style="color: #608b4e;">// Rehash all existing entries</span>
+        <span style="color: #569cd6;">for</span> (<span style="color: #569cd6;">int</span> i = <span style="color: #b5cea8;">0</span>; i &lt; oldCapacity; i++) {
+            Entry&lt;K, V&gt; current = oldBuckets[i];
+            <span style="color: #569cd6;">while</span> (current != <span style="color: #569cd6;">null</span>) {
+                Entry&lt;K, V&gt; next = current.next;
+                
+                <span style="color: #608b4e;">// Recalculate index in new array</span>
+                <span style="color: #569cd6;">int</span> newIndex = getBucketIndex(current.hash);
+                
+                <span style="color: #608b4e;">// Insert at head of new bucket</span>
+                current.next = buckets[newIndex];
+                buckets[newIndex] = current;
+                
+                current = next;
+            }
+        }
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// UTILITY METHODS</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">public int</span> <span style="color: #dcdcaa;">size</span>() {
+        <span style="color: #569cd6;">return</span> size;
+    }
+    
+    <span style="color: #569cd6;">public boolean</span> <span style="color: #dcdcaa;">isEmpty</span>() {
+        <span style="color: #569cd6;">return</span> size == <span style="color: #b5cea8;">0</span>;
+    }
+    
+    <span style="color: #569cd6;">public void</span> <span style="color: #dcdcaa;">clear</span>() {
+        <span style="color: #569cd6;">for</span> (<span style="color: #569cd6;">int</span> i = <span style="color: #b5cea8;">0</span>; i &lt; capacity; i++) {
+            buckets[i] = <span style="color: #569cd6;">null</span>;
+        }
+        size = <span style="color: #b5cea8;">0</span>;
+    }
+    
+    <span style="color: #608b4e;">// Debug method to visualize the hash map</span>
+    <span style="color: #569cd6;">public void</span> <span style="color: #dcdcaa;">printStructure</span>() {
+        System.out.println(<span style="color: #ce9178;">"HashMap [size="</span> + size + <span style="color: #ce9178;">", capacity="</span> + capacity + <span style="color: #ce9178;">"]"</span>);
+        <span style="color: #569cd6;">for</span> (<span style="color: #569cd6;">int</span> i = <span style="color: #b5cea8;">0</span>; i &lt; capacity; i++) {
+            System.out.print(<span style="color: #ce9178;">"Bucket["</span> + i + <span style="color: #ce9178;">"] → "</span>);
+            Entry&lt;K, V&gt; current = buckets[i];
+            <span style="color: #569cd6;">if</span> (current == <span style="color: #569cd6;">null</span>) {
+                System.out.println(<span style="color: #ce9178;">"null"</span>);
+            } <span style="color: #569cd6;">else</span> {
+                <span style="color: #569cd6;">while</span> (current != <span style="color: #569cd6;">null</span>) {
+                    System.out.print(<span style="color: #ce9178;">"["</span> + current.key + <span style="color: #ce9178;">":"</span> + current.value + <span style="color: #ce9178;">"]"</span>);
+                    current = current.next;
+                    <span style="color: #569cd6;">if</span> (current != <span style="color: #569cd6;">null</span>) System.out.print(<span style="color: #ce9178;">" → "</span>);
+                }
+                System.out.println();
+            }
+        }
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// MAIN - DEMONSTRATION</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">public static void</span> <span style="color: #dcdcaa;">main</span>(String[] args) {
+        MyHashMap&lt;String, Integer&gt; map = <span style="color: #569cd6;">new</span> MyHashMap&lt;&gt;(<span style="color: #b5cea8;">4</span>);
+        
+        System.out.println(<span style="color: #ce9178;">"=== Adding entries ==="</span>);
+        map.put(<span style="color: #ce9178;">"apple"</span>, <span style="color: #b5cea8;">100</span>);
+        map.put(<span style="color: #ce9178;">"banana"</span>, <span style="color: #b5cea8;">200</span>);
+        map.put(<span style="color: #ce9178;">"cherry"</span>, <span style="color: #b5cea8;">300</span>);
+        map.printStructure();
+        
+        System.out.println(<span style="color: #ce9178;">"\n=== After adding more (triggers resize) ==="</span>);
+        map.put(<span style="color: #ce9178;">"date"</span>, <span style="color: #b5cea8;">400</span>);
+        map.put(<span style="color: #ce9178;">"elderberry"</span>, <span style="color: #b5cea8;">500</span>);
+        map.printStructure();
+        
+        System.out.println(<span style="color: #ce9178;">"\n=== Get operations ==="</span>);
+        System.out.println(<span style="color: #ce9178;">"get('cherry') = "</span> + map.get(<span style="color: #ce9178;">"cherry"</span>));
+        System.out.println(<span style="color: #ce9178;">"get('fig') = "</span> + map.get(<span style="color: #ce9178;">"fig"</span>));
+        
+        System.out.println(<span style="color: #ce9178;">"\n=== Update existing key ==="</span>);
+        map.put(<span style="color: #ce9178;">"apple"</span>, <span style="color: #b5cea8;">999</span>);
+        System.out.println(<span style="color: #ce9178;">"get('apple') = "</span> + map.get(<span style="color: #ce9178;">"apple"</span>));
+        
+        System.out.println(<span style="color: #ce9178;">"\n=== Remove operation ==="</span>);
+        System.out.println(<span style="color: #ce9178;">"remove('banana') = "</span> + map.remove(<span style="color: #ce9178;">"banana"</span>));
+        System.out.println(<span style="color: #ce9178;">"containsKey('banana') = "</span> + map.containsKey(<span style="color: #ce9178;">"banana"</span>));
+        map.printStructure();
+    }
+}
+</pre>
+                        </div>
+                    </li>
+
+                    <li
+                        style="margin-bottom: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px; list-style-type: none;">
+                        <h2 style="color: #2c3e50; border-bottom: 3px solid #e74c3c; padding-bottom: 10px;">2. LRU Cache
+                            without LinkedHashMap</h2>
+
+                        <h3 style="color: #27ae60;">📖 English Explanation</h3>
+                        <div style="background: #fff; padding: 15px; border-left: 4px solid #27ae60; margin: 10px 0;">
+                            <p><strong>What is an LRU Cache?</strong></p>
+                            <p>LRU (Least Recently Used) Cache is a data structure that stores a limited number of items
+                                and automatically removes the least recently accessed item when the cache is full. It's
+                                used in:</p>
+                            <ul>
+                                <li>Operating system page replacement</li>
+                                <li>Web browser caches</li>
+                                <li>Database query caches</li>
+                            </ul>
+
+                            <p><strong>Requirements:</strong></p>
+                            <ul>
+                                <li><code>get(key)</code> - O(1) time</li>
+                                <li><code>put(key, value)</code> - O(1) time</li>
+                                <li>Evict least recently used item when capacity exceeded</li>
+                            </ul>
+
+                            <p><strong>Solution: HashMap + Doubly Linked List</strong></p>
+                            <ul>
+                                <li><strong>HashMap:</strong> Provides O(1) lookup by key → points to node in linked
+                                    list</li>
+                                <li><strong>Doubly Linked List:</strong> Maintains order of access (most recent at head,
+                                    least recent at tail)</li>
+                                <li>On <code>get</code>: Move accessed node to head</li>
+                                <li>On <code>put</code>: Add new node at head, evict tail if over capacity</li>
+                            </ul>
+
+                            <p><strong>Why Doubly Linked List?</strong></p>
+                            <p>We need O(1) removal from any position. With a doubly linked list, given a node, we can
+                                unlink it in O(1) by updating its neighbors' pointers. A singly linked list would
+                                require O(n) to find the previous node.</p>
+                        </div>
+
+                        <h3 style="color: #8e44ad;">🔄 Pseudocode with Step-by-Step Diagrams</h3>
+                        <div
+                            style="background: #2d2d2d; color: #f8f8f2; padding: 20px; border-radius: 5px; overflow-x: auto; margin: 10px 0;">
+                            <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 14px;">
+<span style="color: #66d9ef;">╔══════════════════════════════════════════════════════════════════╗</span>
+<span style="color: #66d9ef;">║</span>                    <span style="color: #f92672;">LRU CACHE STRUCTURE</span>                           <span style="color: #66d9ef;">║</span>
+<span style="color: #66d9ef;">╚══════════════════════════════════════════════════════════════════╝</span>
+
+<span style="color: #75715e;">// Doubly Linked List Node</span>
+<span style="color: #a6e22e;">Node:</span>
+    key         <span style="color: #75715e;">// For eviction - need to remove from HashMap</span>
+    value       <span style="color: #75715e;">// The cached value</span>
+    prev        <span style="color: #75715e;">// Pointer to previous node</span>
+    next        <span style="color: #75715e;">// Pointer to next node</span>
+
+<span style="color: #75715e;">// LRU Cache Structure</span>
+<span style="color: #a6e22e;">LRUCache:</span>
+    capacity    <span style="color: #75715e;">// Maximum number of items</span>
+    map         <span style="color: #75715e;">// HashMap: key → Node</span>
+    head        <span style="color: #75715e;">// Dummy head (most recently used)</span>
+    tail        <span style="color: #75715e;">// Dummy tail (least recently used)</span>
+
+<span style="color: #e6db74;">Why dummy nodes?</span>
+    - Simplify edge cases (empty list, single element)
+    - No null checks needed
+    - Real nodes always between head and tail
+
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+<span style="color: #e6db74;">STRUCTURE VISUALIZATION:</span>
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+
+    HashMap                    Doubly Linked List
+    ┌─────────┐               
+    │ key1 ───┼──────────┐    ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐
+    │ key2 ───┼────────┐ │    │ HEAD │⟷│ Node │⟷│ Node │⟷│ TAIL │
+    │ key3 ───┼──────┐ │ └───→│dummy │   │  1   │   │  2   │   │dummy │
+    └─────────┘      │ └─────→└──────┘   └──────┘   └──────┘   └──────┘
+                     │            ↑                     ↑
+                     └────────────┼─────────────────────┘
+                                  
+    <span style="color: #a6e22e;">Most Recent</span>                                    <span style="color: #f92672;">Least Recent</span>
+
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+<span style="color: #f92672;">HELPER: moveToHead(node)</span>
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+
+<span style="color: #a6e22e;">Purpose:</span> Mark node as most recently used
+
+<span style="color: #a6e22e;">STEP 1:</span> Remove node from current position
+    node.prev.next = node.next
+    node.next.prev = node.prev
+    
+<span style="color: #a6e22e;">STEP 2:</span> Insert right after dummy head
+    node.next = head.next
+    node.prev = head
+    head.next.prev = node
+    head.next = node
+
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+<span style="color: #e6db74;">VISUAL: moveToHead(B)</span>
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+
+<span style="color: #fd971f;">Before:</span>
+    HEAD ⟷ [A] ⟷ [B] ⟷ [C] ⟷ TAIL
+                 ↑
+              Move this
+
+<span style="color: #fd971f;">Step 1 - Unlink B:</span>
+    HEAD ⟷ [A] ⟷ [C] ⟷ TAIL       [B] (floating)
+             └─────┘
+
+<span style="color: #fd971f;">Step 2 - Insert B after HEAD:</span>
+    HEAD ⟷ [B] ⟷ [A] ⟷ [C] ⟷ TAIL
+             ↑
+          Now at front!
+
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+<span style="color: #f92672;">HELPER: removeTail()</span>
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+
+<span style="color: #a6e22e;">Purpose:</span> Remove and return the least recently used node
+
+    lru = tail.prev              <span style="color: #75715e;">// Get actual last node</span>
+    lru.prev.next = tail         <span style="color: #75715e;">// Bypass lru</span>
+    tail.prev = lru.prev
+    RETURN lru
+
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+<span style="color: #e6db74;">VISUAL: removeTail()</span>
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+
+<span style="color: #fd971f;">Before:</span>
+    HEAD ⟷ [A] ⟷ [B] ⟷ [C] ⟷ TAIL
+                       ↑
+                 LRU (to remove)
+
+<span style="color: #fd971f;">After:</span>
+    HEAD ⟷ [A] ⟷ [B] ⟷ TAIL      [C] returned (then removed from map)
+                   └────┘
+
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+<span style="color: #f92672;">OPERATION: GET(key)</span>
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+
+    IF key NOT in map:
+        RETURN -1 (or null)
+    
+    node = map.get(key)
+    moveToHead(node)       <span style="color: #75715e;">// Mark as recently used</span>
+    RETURN node.value
+
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+<span style="color: #e6db74;">EXAMPLE: get(2) on cache with [1,2,3], capacity=3</span>
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+
+<span style="color: #fd971f;">Before get(2):</span>
+    Map: {1→Node1, 2→Node2, 3→Node3}
+    List: HEAD ⟷ [3] ⟷ [2] ⟷ [1] ⟷ TAIL
+                       ↑
+                   Access this
+
+<span style="color: #fd971f;">After get(2):</span>
+    Map: {1→Node1, 2→Node2, 3→Node3}  <span style="color: #e6db74;">(unchanged)</span>
+    List: HEAD ⟷ [2] ⟷ [3] ⟷ [1] ⟷ TAIL
+                 ↑
+             Moved to front!
+    
+    Returns: value of key 2
+
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+<span style="color: #f92672;">OPERATION: PUT(key, value)</span>
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+
+    IF key IN map:
+        <span style="color: #75715e;">// Update existing</span>
+        node = map.get(key)
+        node.value = value
+        moveToHead(node)
+    ELSE:
+        <span style="color: #75715e;">// Insert new</span>
+        IF map.size() == capacity:
+            <span style="color: #75715e;">// Evict LRU</span>
+            lru = removeTail()
+            map.remove(lru.key)  <span style="color: #75715e;">// Need key stored in node!</span>
+        
+        newNode = new Node(key, value)
+        addToHead(newNode)
+        map.put(key, newNode)
+
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+<span style="color: #e6db74;">FULL EXAMPLE: LRU Cache operations (capacity=3)</span>
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+
+<span style="color: #fd971f;">Initial State:</span>
+    Map: {}
+    List: HEAD ⟷ TAIL
+    
+<span style="color: #fd971f;">put(1, "A"):</span>
+    Map: {1→Node1}
+    List: HEAD ⟷ [1:"A"] ⟷ TAIL
+    
+<span style="color: #fd971f;">put(2, "B"):</span>
+    Map: {1→Node1, 2→Node2}
+    List: HEAD ⟷ [2:"B"] ⟷ [1:"A"] ⟷ TAIL
+    
+<span style="color: #fd971f;">put(3, "C"):</span>
+    Map: {1→Node1, 2→Node2, 3→Node3}
+    List: HEAD ⟷ [3:"C"] ⟷ [2:"B"] ⟷ [1:"A"] ⟷ TAIL
+                                           ↑
+                                      LRU (will be evicted next)
+
+<span style="color: #fd971f;">get(1):</span>  <span style="color: #e6db74;">→ Returns "A", moves 1 to front</span>
+    Map: {1→Node1, 2→Node2, 3→Node3}
+    List: HEAD ⟷ [1:"A"] ⟷ [3:"C"] ⟷ [2:"B"] ⟷ TAIL
+                                           ↑
+                                    Now 2 is LRU
+
+<span style="color: #fd971f;">put(4, "D"):</span>  <span style="color: #f92672;">→ Capacity full! Evict LRU (key=2)</span>
+    Map: {1→Node1, 3→Node3, 4→Node4}  <span style="color: #f92672;">← key 2 removed!</span>
+    List: HEAD ⟷ [4:"D"] ⟷ [1:"A"] ⟷ [3:"C"] ⟷ TAIL
+
+<span style="color: #fd971f;">get(2):</span>  <span style="color: #f92672;">→ Returns -1 (not found, was evicted)</span>
+
+<span style="color: #fd971f;">put(1, "A*"):</span>  <span style="color: #e6db74;">→ Update existing key</span>
+    Map: {1→Node1, 3→Node3, 4→Node4}
+    List: HEAD ⟷ [1:"A*"] ⟷ [4:"D"] ⟷ [3:"C"] ⟷ TAIL
+                   ↑
+             Updated value, moved to front
+</pre>
+                        </div>
+
+                        <h3 style="color: #e74c3c;">💻 Complete Java Implementation</h3>
+                        <div
+                            style="background: #1e1e1e; color: #dcdcdc; padding: 20px; border-radius: 5px; overflow-x: auto; margin: 10px 0;">
+                            <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px;">
+<span style="color: #569cd6;">import</span> java.util.HashMap;
+<span style="color: #569cd6;">import</span> java.util.Map;
+
+<span style="color: #608b4e;">/**
+ * LRU Cache Implementation using HashMap + Doubly Linked List
+ * 
+ * Time Complexity: O(1) for both get and put
+ * Space Complexity: O(capacity)
+ * 
+ * Key insight: HashMap gives O(1) lookup, Doubly Linked List gives O(1) 
+ * insertion/deletion at any position when we have the node reference.
+ */</span>
+<span style="color: #569cd6;">public class</span> <span style="color: #4ec9b0;">LRUCache</span> {
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// INNER CLASS: Doubly Linked List Node</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">private static class</span> <span style="color: #4ec9b0;">Node</span> {
+        <span style="color: #569cd6;">int</span> key;      <span style="color: #608b4e;">// Store key for removal from map during eviction</span>
+        <span style="color: #569cd6;">int</span> value;
+        Node prev;
+        Node next;
+        
+        Node() {
+            <span style="color: #608b4e;">// For dummy head/tail</span>
+        }
+        
+        Node(<span style="color: #569cd6;">int</span> key, <span style="color: #569cd6;">int</span> value) {
+            <span style="color: #569cd6;">this</span>.key = key;
+            <span style="color: #569cd6;">this</span>.value = value;
+        }
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// INSTANCE VARIABLES</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">private final int</span> capacity;
+    <span style="color: #569cd6;">private final</span> Map&lt;Integer, Node&gt; cache;  <span style="color: #608b4e;">// key → Node</span>
+    <span style="color: #569cd6;">private final</span> Node head;  <span style="color: #608b4e;">// Dummy head - most recently used side</span>
+    <span style="color: #569cd6;">private final</span> Node tail;  <span style="color: #608b4e;">// Dummy tail - least recently used side</span>
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// CONSTRUCTOR</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">public</span> <span style="color: #dcdcaa;">LRUCache</span>(<span style="color: #569cd6;">int</span> capacity) {
+        <span style="color: #569cd6;">this</span>.capacity = capacity;
+        <span style="color: #569cd6;">this</span>.cache = <span style="color: #569cd6;">new</span> HashMap&lt;&gt;();
+        
+        <span style="color: #608b4e;">// Initialize dummy head and tail</span>
+        <span style="color: #608b4e;">// These never hold real data - just markers</span>
+        head = <span style="color: #569cd6;">new</span> Node();
+        tail = <span style="color: #569cd6;">new</span> Node();
+        
+        <span style="color: #608b4e;">// Connect them: HEAD ⟷ TAIL</span>
+        head.next = tail;
+        tail.prev = head;
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// GET OPERATION - O(1)</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #608b4e;">/**
+     * Get value by key.
+     * If key exists: move to front (most recently used), return value
+     * If key doesn't exist: return -1
+     */</span>
+    <span style="color: #569cd6;">public int</span> <span style="color: #dcdcaa;">get</span>(<span style="color: #569cd6;">int</span> key) {
+        Node node = cache.get(key);
+        
+        <span style="color: #569cd6;">if</span> (node == <span style="color: #569cd6;">null</span>) {
+            <span style="color: #569cd6;">return</span> -<span style="color: #b5cea8;">1</span>;  <span style="color: #608b4e;">// Key not found</span>
+        }
+        
+        <span style="color: #608b4e;">// Key exists - mark as recently used by moving to head</span>
+        moveToHead(node);
+        
+        <span style="color: #569cd6;">return</span> node.value;
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// PUT OPERATION - O(1)</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #608b4e;">/**
+     * Insert or update key-value pair.
+     * If key exists: update value, move to front
+     * If key doesn't exist: 
+     *   - If at capacity: evict LRU (tail) first
+     *   - Insert new node at front
+     */</span>
+    <span style="color: #569cd6;">public void</span> <span style="color: #dcdcaa;">put</span>(<span style="color: #569cd6;">int</span> key, <span style="color: #569cd6;">int</span> value) {
+        Node node = cache.get(key);
+        
+        <span style="color: #569cd6;">if</span> (node != <span style="color: #569cd6;">null</span>) {
+            <span style="color: #608b4e;">// Key exists - update value and move to front</span>
+            node.value = value;
+            moveToHead(node);
+        } <span style="color: #569cd6;">else</span> {
+            <span style="color: #608b4e;">// Key doesn't exist - create new node</span>
+            Node newNode = <span style="color: #569cd6;">new</span> Node(key, value);
+            
+            <span style="color: #608b4e;">// Check if we need to evict</span>
+            <span style="color: #569cd6;">if</span> (cache.size() >= capacity) {
+                <span style="color: #608b4e;">// Remove LRU node (the one before tail)</span>
+                Node lru = removeTail();
+                cache.remove(lru.key);  <span style="color: #608b4e;">// Remove from HashMap</span>
+            }
+            
+            <span style="color: #608b4e;">// Add new node to front and to HashMap</span>
+            addToHead(newNode);
+            cache.put(key, newNode);
+        }
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// HELPER: Add node right after head (most recently used position)</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">private void</span> <span style="color: #dcdcaa;">addToHead</span>(Node node) {
+        <span style="color: #608b4e;">// Current state: HEAD ⟷ [first] ⟷ ...</span>
+        <span style="color: #608b4e;">// Goal:          HEAD ⟷ [node] ⟷ [first] ⟷ ...</span>
+        
+        node.prev = head;
+        node.next = head.next;
+        
+        head.next.prev = node;  <span style="color: #608b4e;">// [first].prev = node</span>
+        head.next = node;       <span style="color: #608b4e;">// HEAD.next = node</span>
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// HELPER: Remove a node from its current position</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">private void</span> <span style="color: #dcdcaa;">removeNode</span>(Node node) {
+        <span style="color: #608b4e;">// Current state: ... ⟷ [A] ⟷ [node] ⟷ [B] ⟷ ...</span>
+        <span style="color: #608b4e;">// Goal:          ... ⟷ [A] ⟷ [B] ⟷ ...  (bypass node)</span>
+        
+        node.prev.next = node.next;  <span style="color: #608b4e;">// A.next = B</span>
+        node.next.prev = node.prev;  <span style="color: #608b4e;">// B.prev = A</span>
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// HELPER: Move existing node to head (mark as recently used)</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">private void</span> <span style="color: #dcdcaa;">moveToHead</span>(Node node) {
+        <span style="color: #608b4e;">// Two-step process:</span>
+        <span style="color: #608b4e;">// 1. Remove from current position</span>
+        removeNode(node);
+        
+        <span style="color: #608b4e;">// 2. Add to head</span>
+        addToHead(node);
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// HELPER: Remove and return the LRU node (node before tail)</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">private</span> Node <span style="color: #dcdcaa;">removeTail</span>() {
+        <span style="color: #608b4e;">// The LRU node is the one right before dummy tail</span>
+        Node lru = tail.prev;
+        removeNode(lru);
+        <span style="color: #569cd6;">return</span> lru;  <span style="color: #608b4e;">// Return so caller can remove from HashMap</span>
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// UTILITY: Print current state (for debugging)</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">public void</span> <span style="color: #dcdcaa;">printCache</span>() {
+        System.out.print(<span style="color: #ce9178;">"Cache [size="</span> + cache.size() + <span style="color: #ce9178;">", cap="</span> + capacity + <span style="color: #ce9178;">"]: HEAD ⟷ "</span>);
+        
+        Node current = head.next;
+        <span style="color: #569cd6;">while</span> (current != tail) {
+            System.out.print(<span style="color: #ce9178;">"["</span> + current.key + <span style="color: #ce9178;">":"</span> + current.value + <span style="color: #ce9178;">"]"</span>);
+            current = current.next;
+            <span style="color: #569cd6;">if</span> (current != tail) {
+                System.out.print(<span style="color: #ce9178;">" ⟷ "</span>);
+            }
+        }
+        System.out.println(<span style="color: #ce9178;">" ⟷ TAIL"</span>);
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// MAIN - DEMONSTRATION</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">public static void</span> <span style="color: #dcdcaa;">main</span>(String[] args) {
+        System.out.println(<span style="color: #ce9178;">"═══════════════════════════════════════════"</span>);
+        System.out.println(<span style="color: #ce9178;">"        LRU CACHE DEMONSTRATION"</span>);
+        System.out.println(<span style="color: #ce9178;">"═══════════════════════════════════════════\n"</span>);
+        
+        LRUCache cache = <span style="color: #569cd6;">new</span> LRUCache(<span style="color: #b5cea8;">3</span>);
+        
+        System.out.println(<span style="color: #ce9178;">"Creating LRU Cache with capacity = 3\n"</span>);
+        
+        <span style="color: #608b4e;">// Test 1: Basic insertions</span>
+        System.out.println(<span style="color: #ce9178;">"--- put(1, 100) ---"</span>);
+        cache.put(<span style="color: #b5cea8;">1</span>, <span style="color: #b5cea8;">100</span>);
+        cache.printCache();
+        
+        System.out.println(<span style="color: #ce9178;">"\n--- put(2, 200) ---"</span>);
+        cache.put(<span style="color: #b5cea8;">2</span>, <span style="color: #b5cea8;">200</span>);
+        cache.printCache();
+        
+        System.out.println(<span style="color: #ce9178;">"\n--- put(3, 300) ---"</span>);
+        cache.put(<span style="color: #b5cea8;">3</span>, <span style="color: #b5cea8;">300</span>);
+        cache.printCache();
+        
+        <span style="color: #608b4e;">// Test 2: Access moves to front</span>
+        System.out.println(<span style="color: #ce9178;">"\n--- get(1) → "</span> + cache.get(<span style="color: #b5cea8;">1</span>) + <span style="color: #ce9178;">" ---"</span>);
+        cache.printCache();
+        System.out.println(<span style="color: #ce9178;">"(Key 1 moved to front, key 2 is now LRU)"</span>);
+        
+        <span style="color: #608b4e;">// Test 3: Eviction on capacity</span>
+        System.out.println(<span style="color: #ce9178;">"\n--- put(4, 400) - EVICTION! ---"</span>);
+        cache.put(<span style="color: #b5cea8;">4</span>, <span style="color: #b5cea8;">400</span>);
+        cache.printCache();
+        System.out.println(<span style="color: #ce9178;">"(Key 2 was LRU, so it was evicted)"</span>);
+        
+        <span style="color: #608b4e;">// Test 4: Verify eviction</span>
+        System.out.println(<span style="color: #ce9178;">"\n--- get(2) → "</span> + cache.get(<span style="color: #b5cea8;">2</span>) + <span style="color: #ce9178;">" ---"</span>);
+        System.out.println(<span style="color: #ce9178;">"(Returns -1 because key 2 was evicted)"</span>);
+        
+        <span style="color: #608b4e;">// Test 5: Update existing key</span>
+        System.out.println(<span style="color: #ce9178;">"\n--- put(1, 999) - UPDATE ---"</span>);
+        cache.put(<span style="color: #b5cea8;">1</span>, <span style="color: #b5cea8;">999</span>);
+        cache.printCache();
+        System.out.println(<span style="color: #ce9178;">"(Key 1 updated and moved to front)"</span>);
+        
+        <span style="color: #608b4e;">// Test 6: Another eviction</span>
+        System.out.println(<span style="color: #ce9178;">"\n--- put(5, 500) - EVICTION! ---"</span>);
+        cache.put(<span style="color: #b5cea8;">5</span>, <span style="color: #b5cea8;">500</span>);
+        cache.printCache();
+        System.out.println(<span style="color: #ce9178;">"(Key 3 was LRU, so it was evicted)"</span>);
+        
+        System.out.println(<span style="color: #ce9178;">"\n--- get(3) → "</span> + cache.get(<span style="color: #b5cea8;">3</span>) + <span style="color: #ce9178;">" ---"</span>);
+        System.out.println(<span style="color: #ce9178;">"(Returns -1 because key 3 was evicted)"</span>);
+        
+        System.out.println(<span style="color: #ce9178;">"\n═══════════════════════════════════════════"</span>);
+        System.out.println(<span style="color: #ce9178;">"        FINAL STATE"</span>);
+        System.out.println(<span style="color: #ce9178;">"═══════════════════════════════════════════"</span>);
+        cache.printCache();
+        System.out.println(<span style="color: #ce9178;">"get(5) = "</span> + cache.get(<span style="color: #b5cea8;">5</span>));
+        System.out.println(<span style="color: #ce9178;">"get(1) = "</span> + cache.get(<span style="color: #b5cea8;">1</span>));
+        System.out.println(<span style="color: #ce9178;">"get(4) = "</span> + cache.get(<span style="color: #b5cea8;">4</span>));
+    }
+}
+</pre>
+                        </div>
+                    </li>
+
+                    <li
+                        style="margin-bottom: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px; list-style-type: none;">
+                        <h2 style="color: #2c3e50; border-bottom: 3px solid #9b59b6; padding-bottom: 10px;">3. LFU Cache
+                            (Least Frequently Used)</h2>
+
+                        <h3 style="color: #27ae60;">📖 English Explanation</h3>
+                        <div style="background: #fff; padding: 15px; border-left: 4px solid #27ae60; margin: 10px 0;">
+                            <p><strong>What is an LFU Cache?</strong></p>
+                            <p>LFU (Least Frequently Used) Cache evicts the item that has been accessed the <em>fewest
+                                    number of times</em>. If there's a tie (multiple items with same frequency), evict
+                                the <em>least recently used</em> among them (LRU as tiebreaker).</p>
+
+                            <p><strong>Requirements:</strong></p>
+                            <ul>
+                                <li><code>get(key)</code> - O(1) time, increments frequency</li>
+                                <li><code>put(key, value)</code> - O(1) time</li>
+                                <li>Evict item with lowest frequency (LRU tiebreaker)</li>
+                            </ul>
+
+                            <p><strong>Challenge:</strong> Need to track both frequency AND recency!</p>
+
+                            <p><strong>Solution: Two HashMaps + Multiple Doubly Linked Lists</strong></p>
+                            <ol>
+                                <li><strong>keyMap:</strong> HashMap from key → Node (for O(1) access)</li>
+                                <li><strong>freqMap:</strong> HashMap from frequency → DoublyLinkedList of nodes with
+                                    that frequency</li>
+                                <li><strong>minFreq:</strong> Track the minimum frequency for O(1) eviction</li>
+                            </ol>
+
+                            <p><strong>Key Insight:</strong> Each frequency bucket is itself a mini-LRU cache (doubly
+                                linked list). When we access a node, we remove it from its current frequency bucket and
+                                move it to the next frequency bucket.</p>
+                        </div>
+
+                        <h3 style="color: #8e44ad;">🔄 Pseudocode with Step-by-Step Diagrams</h3>
+                        <div
+                            style="background: #2d2d2d; color: #f8f8f2; padding: 20px; border-radius: 5px; overflow-x: auto; margin: 10px 0;">
+                            <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 14px;">
+<span style="color: #66d9ef;">╔══════════════════════════════════════════════════════════════════╗</span>
+<span style="color: #66d9ef;">║</span>                    <span style="color: #f92672;">LFU CACHE STRUCTURE</span>                           <span style="color: #66d9ef;">║</span>
+<span style="color: #66d9ef;">╚══════════════════════════════════════════════════════════════════╝</span>
+
+<span style="color: #75715e;">// Node structure (stored in linked lists)</span>
+<span style="color: #a6e22e;">Node:</span>
+    key         <span style="color: #75715e;">// The key</span>
+    value       <span style="color: #75715e;">// The value</span>
+    freq        <span style="color: #75715e;">// Current access frequency</span>
+    prev, next  <span style="color: #75715e;">// For doubly linked list</span>
+
+<span style="color: #75715e;">// Each frequency has its own doubly linked list (acts as LRU within frequency)</span>
+<span style="color: #a6e22e;">DoublyLinkedList:</span>
+    head        <span style="color: #75715e;">// Dummy head (most recent)</span>
+    tail        <span style="color: #75715e;">// Dummy tail (least recent)</span>
+    size        <span style="color: #75715e;">// Number of nodes</span>
+
+<span style="color: #75715e;">// LFU Cache structure</span>
+<span style="color: #a6e22e;">LFUCache:</span>
+    capacity    <span style="color: #75715e;">// Maximum items</span>
+    minFreq     <span style="color: #75715e;">// Current minimum frequency (for eviction)</span>
+    keyMap      <span style="color: #75715e;">// HashMap: key → Node</span>
+    freqMap     <span style="color: #75715e;">// HashMap: frequency → DoublyLinkedList</span>
+
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+<span style="color: #e6db74;">STRUCTURE VISUALIZATION:</span>
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+
+    keyMap                          freqMap
+    ┌──────────┐                    ┌─────────────────────────────────────┐
+    │ key=1 ───┼──┐                 │ freq=1 → HEAD⟷[C]⟷[D]⟷TAIL       │
+    │ key=2 ───┼──┼──┐              │ freq=2 → HEAD⟷[B]⟷TAIL            │
+    │ key=3 ───┼──┼──┼──┐           │ freq=3 → HEAD⟷[A]⟷TAIL            │
+    │ key=4 ───┼──┼──┼──┼─→         └─────────────────────────────────────┘
+    └──────────┘  │  │  │                     ↑
+                  │  │  │           minFreq = 1 (points to lowest freq bucket)
+                  ↓  ↓  ↓
+                 Points to actual Node in respective freq list
+
+<span style="color: #e6db74;">Eviction target: Tail of minFreq bucket (D in this case)</span>
+                 <span style="color: #e6db74;">(least recent among least frequent)</span>
+
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+<span style="color: #f92672;">OPERATION: GET(key)</span>
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+
+    IF key NOT in keyMap:
+        RETURN -1
+        
+    node = keyMap.get(key)
+    <span style="color: #a6e22e;">updateFrequency(node)</span>      <span style="color: #75715e;">// Move to next freq bucket</span>
+    RETURN node.value
+
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+<span style="color: #f92672;">HELPER: updateFrequency(node)</span>
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+
+<span style="color: #a6e22e;">STEP 1:</span> Remove from current frequency bucket
+    oldFreq = node.freq
+    freqMap[oldFreq].remove(node)
+    
+<span style="color: #a6e22e;">STEP 2:</span> Update minFreq if needed
+    IF oldFreq == minFreq AND freqMap[oldFreq].isEmpty():
+        minFreq++
+        
+<span style="color: #a6e22e;">STEP 3:</span> Increment node's frequency
+    node.freq++
+    newFreq = node.freq
+    
+<span style="color: #a6e22e;">STEP 4:</span> Add to new frequency bucket (at head = most recent)
+    IF freqMap[newFreq] doesn't exist:
+        freqMap[newFreq] = new DoublyLinkedList()
+    freqMap[newFreq].addToHead(node)
+
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+<span style="color: #e6db74;">VISUAL: updateFrequency for node B (freq 1→2)</span>
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+
+<span style="color: #fd971f;">Before:</span>
+    freqMap:
+    ┌────────────────────────────────────┐
+    │ freq=1 → HEAD⟷[A]⟷[B]⟷[C]⟷TAIL │  ← minFreq=1
+    │ freq=2 → (empty)                   │
+    └────────────────────────────────────┘
+    
+<span style="color: #fd971f;">Step 1: Remove B from freq=1 bucket:</span>
+    ┌────────────────────────────────────┐
+    │ freq=1 → HEAD⟷[A]⟷[C]⟷TAIL      │
+    │ freq=2 → (empty)                   │
+    └────────────────────────────────────┘
+    [B] is floating
+
+<span style="color: #fd971f;">Step 2: minFreq check:</span>
+    freq=1 still has nodes, minFreq stays 1
+
+<span style="color: #fd971f;">Step 3 & 4: Increment B.freq, add to freq=2:</span>
+    ┌────────────────────────────────────┐
+    │ freq=1 → HEAD⟷[A]⟷[C]⟷TAIL      │  ← minFreq=1
+    │ freq=2 → HEAD⟷[B]⟷TAIL           │
+    └────────────────────────────────────┘
+
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+<span style="color: #f92672;">OPERATION: PUT(key, value)</span>
+<span style="color: #66d9ef;">═══════════════════════════════════════════════════════════════════</span>
+
+    IF capacity == 0:
+        RETURN
+        
+    IF key IN keyMap:
+        <span style="color: #75715e;">// Update existing</span>
+        node = keyMap.get(key)
+        node.value = value
+        updateFrequency(node)
+    ELSE:
+        <span style="color: #75715e;">// Insert new</span>
+        IF keyMap.size() >= capacity:
+            <span style="color: #75715e;">// EVICT: Remove from minFreq bucket's tail</span>
+            lru = freqMap[minFreq].removeTail()
+            keyMap.remove(lru.key)
+        
+        <span style="color: #75715e;">// Create new node with freq=1</span>
+        newNode = new Node(key, value, freq=1)
+        keyMap.put(key, newNode)
+        
+        <span style="color: #75715e;">// Add to freq=1 bucket</span>
+        IF freqMap[1] doesn't exist:
+            freqMap[1] = new DoublyLinkedList()
+        freqMap[1].addToHead(newNode)
+        
+        <span style="color: #75715e;">// New node always has freq=1, so minFreq=1</span>
+        minFreq = 1
+
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+<span style="color: #e6db74;">FULL EXAMPLE: LFU Cache operations (capacity=3)</span>
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+
+<span style="color: #fd971f;">Initial State:</span>
+    keyMap: {}
+    freqMap: {}
+    minFreq: 0
+
+<span style="color: #fd971f;">put(1, "A"):</span>
+    keyMap: {1→Node1}
+    freqMap: {1 → HEAD⟷[1:"A",f=1]⟷TAIL}
+    minFreq: 1
+
+<span style="color: #fd971f;">put(2, "B"):</span>
+    keyMap: {1→Node1, 2→Node2}
+    freqMap: {1 → HEAD⟷[2:"B",f=1]⟷[1:"A",f=1]⟷TAIL}
+    minFreq: 1
+    
+<span style="color: #fd971f;">put(3, "C"):</span>
+    keyMap: {1→Node1, 2→Node2, 3→Node3}
+    freqMap: {1 → HEAD⟷[3:"C"]⟷[2:"B"]⟷[1:"A"]⟷TAIL}
+    minFreq: 1
+                                        ↑
+                               LRU among freq=1 (eviction target)
+
+<span style="color: #fd971f;">get(1):</span>  <span style="color: #e6db74;">→ Returns "A", freq 1→2</span>
+    keyMap: {1→Node1, 2→Node2, 3→Node3}
+    freqMap: {
+        1 → HEAD⟷[3:"C"]⟷[2:"B"]⟷TAIL    ← minFreq still 1
+        2 → HEAD⟷[1:"A"]⟷TAIL
+    }
+
+<span style="color: #fd971f;">get(2):</span>  <span style="color: #e6db74;">→ Returns "B", freq 1→2</span>
+    keyMap: {1→Node1, 2→Node2, 3→Node3}
+    freqMap: {
+        1 → HEAD⟷[3:"C"]⟷TAIL            ← minFreq still 1
+        2 → HEAD⟷[2:"B"]⟷[1:"A"]⟷TAIL
+    }
+
+<span style="color: #fd971f;">put(4, "D"):</span>  <span style="color: #f92672;">→ EVICTION needed!</span>
+    <span style="color: #f92672;">Evict from freqMap[minFreq=1] tail → key=3 evicted!</span>
+    
+    keyMap: {1→Node1, 2→Node2, 4→Node4}
+    freqMap: {
+        1 → HEAD⟷[4:"D"]⟷TAIL            ← minFreq reset to 1
+        2 → HEAD⟷[2:"B"]⟷[1:"A"]⟷TAIL
+    }
+
+<span style="color: #fd971f;">get(3):</span>  <span style="color: #f92672;">→ Returns -1 (evicted)</span>
+
+<span style="color: #fd971f;">get(1):</span>  <span style="color: #e6db74;">→ Returns "A", freq 2→3</span>
+    freqMap: {
+        1 → HEAD⟷[4:"D"]⟷TAIL            ← minFreq=1
+        2 → HEAD⟷[2:"B"]⟷TAIL
+        3 → HEAD⟷[1:"A"]⟷TAIL
+    }
+
+<span style="color: #fd971f;">put(5, "E"):</span>  <span style="color: #f92672;">→ EVICTION needed!</span>
+    <span style="color: #f92672;">Evict from freqMap[minFreq=1] tail → key=4 evicted!</span>
+    
+    freqMap: {
+        1 → HEAD⟷[5:"E"]⟷TAIL            ← minFreq=1
+        2 → HEAD⟷[2:"B"]⟷TAIL
+        3 → HEAD⟷[1:"A"]⟷TAIL
+    }
+
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+<span style="color: #e6db74;">KEY INSIGHT: minFreq update rule</span>
+<span style="color: #66d9ef;">───────────────────────────────────────────────────────────────────</span>
+
+<span style="color: #a6e22e;">Case 1:</span> After put() with new key
+    → minFreq = 1 (always, new keys start at freq=1)
+
+<span style="color: #a6e22e;">Case 2:</span> After get() or put() updating existing key
+    → IF we removed the last node from minFreq bucket:
+        minFreq++ (next bucket becomes new min)
+    → Otherwise minFreq stays same
+</pre>
+                        </div>
+
+                        <h3 style="color: #e74c3c;">💻 Complete Java Implementation</h3>
+                        <div
+                            style="background: #1e1e1e; color: #dcdcdc; padding: 20px; border-radius: 5px; overflow-x: auto; margin: 10px 0;">
+                            <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px;">
+<span style="color: #569cd6;">import</span> java.util.HashMap;
+<span style="color: #569cd6;">import</span> java.util.Map;
+
+<span style="color: #608b4e;">/**
+ * LFU Cache Implementation
+ * 
+ * Eviction Policy: Remove least frequently used item.
+ * Tiebreaker: Among items with same frequency, remove least recently used.
+ * 
+ * Time Complexity: O(1) for both get and put
+ * Space Complexity: O(capacity)
+ * 
+ * Data Structures:
+ * 1. keyMap: key → Node (for O(1) lookup)
+ * 2. freqMap: frequency → DoublyLinkedList (each freq has its own LRU list)
+ * 3. minFreq: tracks minimum frequency for O(1) eviction
+ */</span>
+<span style="color: #569cd6;">public class</span> <span style="color: #4ec9b0;">LFUCache</span> {
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// INNER CLASS: Node</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">private static class</span> <span style="color: #4ec9b0;">Node</span> {
+        <span style="color: #569cd6;">int</span> key;
+        <span style="color: #569cd6;">int</span> value;
+        <span style="color: #569cd6;">int</span> freq;      <span style="color: #608b4e;">// Access frequency</span>
+        Node prev;
+        Node next;
+        
+        Node(<span style="color: #569cd6;">int</span> key, <span style="color: #569cd6;">int</span> value) {
+            <span style="color: #569cd6;">this</span>.key = key;
+            <span style="color: #569cd6;">this</span>.value = value;
+            <span style="color: #569cd6;">this</span>.freq = <span style="color: #b5cea8;">1</span>;  <span style="color: #608b4e;">// New nodes start with frequency 1</span>
+        }
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// INNER CLASS: Doubly Linked List (for each frequency bucket)</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">private static class</span> <span style="color: #4ec9b0;">DoublyLinkedList</span> {
+        Node head;   <span style="color: #608b4e;">// Dummy head - most recently used</span>
+        Node tail;   <span style="color: #608b4e;">// Dummy tail - least recently used</span>
+        <span style="color: #569cd6;">int</span> size;
+        
+        DoublyLinkedList() {
+            head = <span style="color: #569cd6;">new</span> Node(<span style="color: #b5cea8;">0</span>, <span style="color: #b5cea8;">0</span>);  <span style="color: #608b4e;">// Dummy</span>
+            tail = <span style="color: #569cd6;">new</span> Node(<span style="color: #b5cea8;">0</span>, <span style="color: #b5cea8;">0</span>);  <span style="color: #608b4e;">// Dummy</span>
+            head.next = tail;
+            tail.prev = head;
+            size = <span style="color: #b5cea8;">0</span>;
+        }
+        
+        <span style="color: #608b4e;">// Add node right after head (most recently used position)</span>
+        <span style="color: #569cd6;">void</span> <span style="color: #dcdcaa;">addToHead</span>(Node node) {
+            node.prev = head;
+            node.next = head.next;
+            head.next.prev = node;
+            head.next = node;
+            size++;
+        }
+        
+        <span style="color: #608b4e;">// Remove specific node from list</span>
+        <span style="color: #569cd6;">void</span> <span style="color: #dcdcaa;">removeNode</span>(Node node) {
+            node.prev.next = node.next;
+            node.next.prev = node.prev;
+            size--;
+        }
+        
+        <span style="color: #608b4e;">// Remove and return the tail node (LRU within this frequency)</span>
+        Node <span style="color: #dcdcaa;">removeTail</span>() {
+            <span style="color: #569cd6;">if</span> (size == <span style="color: #b5cea8;">0</span>) <span style="color: #569cd6;">return null</span>;
+            Node lru = tail.prev;
+            removeNode(lru);
+            <span style="color: #569cd6;">return</span> lru;
+        }
+        
+        <span style="color: #569cd6;">boolean</span> <span style="color: #dcdcaa;">isEmpty</span>() {
+            <span style="color: #569cd6;">return</span> size == <span style="color: #b5cea8;">0</span>;
+        }
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// INSTANCE VARIABLES</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">private final int</span> capacity;
+    <span style="color: #569cd6;">private int</span> minFreq;                           <span style="color: #608b4e;">// Current minimum frequency</span>
+    <span style="color: #569cd6;">private final</span> Map&lt;Integer, Node&gt; keyMap;       <span style="color: #608b4e;">// key → Node</span>
+    <span style="color: #569cd6;">private final</span> Map&lt;Integer, DoublyLinkedList&gt; freqMap;  <span style="color: #608b4e;">// freq → List</span>
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// CONSTRUCTOR</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">public</span> <span style="color: #dcdcaa;">LFUCache</span>(<span style="color: #569cd6;">int</span> capacity) {
+        <span style="color: #569cd6;">this</span>.capacity = capacity;
+        <span style="color: #569cd6;">this</span>.minFreq = <span style="color: #b5cea8;">0</span>;
+        <span style="color: #569cd6;">this</span>.keyMap = <span style="color: #569cd6;">new</span> HashMap&lt;&gt;();
+        <span style="color: #569cd6;">this</span>.freqMap = <span style="color: #569cd6;">new</span> HashMap&lt;&gt;();
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// GET OPERATION - O(1)</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #608b4e;">/**
+     * Get value by key.
+     * If found: increment frequency, return value
+     * If not found: return -1
+     */</span>
+    <span style="color: #569cd6;">public int</span> <span style="color: #dcdcaa;">get</span>(<span style="color: #569cd6;">int</span> key) {
+        Node node = keyMap.get(key);
+        
+        <span style="color: #569cd6;">if</span> (node == <span style="color: #569cd6;">null</span>) {
+            <span style="color: #569cd6;">return</span> -<span style="color: #b5cea8;">1</span>;
+        }
+        
+        <span style="color: #608b4e;">// Update frequency (move to next freq bucket)</span>
+        updateFrequency(node);
+        
+        <span style="color: #569cd6;">return</span> node.value;
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// PUT OPERATION - O(1)</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #608b4e;">/**
+     * Insert or update key-value pair.
+     * If key exists: update value, increment frequency
+     * If key doesn't exist:
+     *   - If at capacity: evict LFU item (LRU tiebreaker)
+     *   - Insert new node with frequency 1
+     */</span>
+    <span style="color: #569cd6;">public void</span> <span style="color: #dcdcaa;">put</span>(<span style="color: #569cd6;">int</span> key, <span style="color: #569cd6;">int</span> value) {
+        <span style="color: #569cd6;">if</span> (capacity == <span style="color: #b5cea8;">0</span>) {
+            <span style="color: #569cd6;">return</span>;
+        }
+        
+        Node node = keyMap.get(key);
+        
+        <span style="color: #569cd6;">if</span> (node != <span style="color: #569cd6;">null</span>) {
+            <span style="color: #608b4e;">// Key exists - update value and frequency</span>
+            node.value = value;
+            updateFrequency(node);
+        } <span style="color: #569cd6;">else</span> {
+            <span style="color: #608b4e;">// Key doesn't exist - need to insert</span>
+            
+            <span style="color: #608b4e;">// Check if eviction needed</span>
+            <span style="color: #569cd6;">if</span> (keyMap.size() >= capacity) {
+                <span style="color: #608b4e;">// Evict from the minFreq bucket</span>
+                DoublyLinkedList minFreqList = freqMap.get(minFreq);
+                Node lfu = minFreqList.removeTail();
+                keyMap.remove(lfu.key);
+            }
+            
+            <span style="color: #608b4e;">// Create new node with freq=1</span>
+            Node newNode = <span style="color: #569cd6;">new</span> Node(key, value);
+            keyMap.put(key, newNode);
+            
+            <span style="color: #608b4e;">// Add to freq=1 bucket</span>
+            freqMap.computeIfAbsent(<span style="color: #b5cea8;">1</span>, k -> <span style="color: #569cd6;">new</span> DoublyLinkedList())
+                   .addToHead(newNode);
+            
+            <span style="color: #608b4e;">// New node always has freq=1, so minFreq becomes 1</span>
+            minFreq = <span style="color: #b5cea8;">1</span>;
+        }
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// HELPER: Update frequency (move node to next freq bucket)</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">private void</span> <span style="color: #dcdcaa;">updateFrequency</span>(Node node) {
+        <span style="color: #569cd6;">int</span> oldFreq = node.freq;
+        
+        <span style="color: #608b4e;">// Step 1: Remove from current frequency bucket</span>
+        DoublyLinkedList oldList = freqMap.get(oldFreq);
+        oldList.removeNode(node);
+        
+        <span style="color: #608b4e;">// Step 2: Update minFreq if we just emptied the minFreq bucket</span>
+        <span style="color: #569cd6;">if</span> (oldFreq == minFreq && oldList.isEmpty()) {
+            minFreq++;
+            <span style="color: #608b4e;">// Note: We don't remove empty lists from freqMap for simplicity</span>
+            <span style="color: #608b4e;">// Could optimize by removing: freqMap.remove(oldFreq);</span>
+        }
+        
+        <span style="color: #608b4e;">// Step 3: Increment node's frequency</span>
+        node.freq++;
+        <span style="color: #569cd6;">int</span> newFreq = node.freq;
+        
+        <span style="color: #608b4e;">// Step 4: Add to new frequency bucket (at head = most recent)</span>
+        freqMap.computeIfAbsent(newFreq, k -> <span style="color: #569cd6;">new</span> DoublyLinkedList())
+               .addToHead(node);
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// UTILITY: Print current state (for debugging)</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">public void</span> <span style="color: #dcdcaa;">printCache</span>() {
+        System.out.println(<span style="color: #ce9178;">"LFU Cache [size="</span> + keyMap.size() + 
+                          <span style="color: #ce9178;">", cap="</span> + capacity + 
+                          <span style="color: #ce9178;">", minFreq="</span> + minFreq + <span style="color: #ce9178;">"]"</span>);
+        
+        <span style="color: #608b4e;">// Print each frequency bucket</span>
+        <span style="color: #569cd6;">for</span> (Map.Entry&lt;Integer, DoublyLinkedList&gt; entry : freqMap.entrySet()) {
+            <span style="color: #569cd6;">int</span> freq = entry.getKey();
+            DoublyLinkedList list = entry.getValue();
+            
+            <span style="color: #569cd6;">if</span> (!list.isEmpty()) {
+                System.out.print(<span style="color: #ce9178;">"  freq="</span> + freq + <span style="color: #ce9178;">": HEAD⟷"</span>);
+                Node current = list.head.next;
+                <span style="color: #569cd6;">while</span> (current != list.tail) {
+                    System.out.print(<span style="color: #ce9178;">"["</span> + current.key + <span style="color: #ce9178;">":"</span> + current.value + <span style="color: #ce9178;">"]"</span>);
+                    current = current.next;
+                    <span style="color: #569cd6;">if</span> (current != list.tail) {
+                        System.out.print(<span style="color: #ce9178;">"⟷"</span>);
+                    }
+                }
+                System.out.println(<span style="color: #ce9178;">"⟷TAIL"</span> + (freq == minFreq ? <span style="color: #ce9178;">" ← eviction target"</span> : <span style="color: #ce9178;">""</span>));
+            }
+        }
+        System.out.println();
+    }
+    
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    <span style="color: #608b4e;">// MAIN - DEMONSTRATION</span>
+    <span style="color: #608b4e;">// ═══════════════════════════════════════════════════════════</span>
+    
+    <span style="color: #569cd6;">public static void</span> <span style="color: #dcdcaa;">main</span>(String[] args) {
+        System.out.println(<span style="color: #ce9178;">"═══════════════════════════════════════════"</span>);
+        System.out.println(<span style="color: #ce9178;">"        LFU CACHE DEMONSTRATION"</span>);
+        System.out.println(<span style="color: #ce9178;">"═══════════════════════════════════════════\n"</span>);
+        
+        LFUCache cache = <span style="color: #569cd6;">new</span> LFUCache(<span style="color: #b5cea8;">3</span>);
+        
+        System.out.println(<span style="color: #ce9178;">"Creating LFU Cache with capacity = 3\n"</span>);
+        
+        <span style="color: #608b4e;">// Initial insertions</span>
+        System.out.println(<span style="color: #ce9178;">"--- put(1, 100) ---"</span>);
+        cache.put(<span style="color: #b5cea8;">1</span>, <span style="color: #b5cea8;">100</span>);
+        cache.printCache();
+        
+        System.out.println(<span style="color: #ce9178;">"--- put(2, 200) ---"</span>);
+        cache.put(<span style="color: #b5cea8;">2</span>, <span style="color: #b5cea8;">200</span>);
+        cache.printCache();
+        
+        System.out.println(<span style="color: #ce9178;">"--- put(3, 300) ---"</span>);
+        cache.put(<span style="color: #b5cea8;">3</span>, <span style="color: #b5cea8;">300</span>);
+        cache.printCache();
+        
+        <span style="color: #608b4e;">// Access key 1 twice - increases its frequency</span>
+        System.out.println(<span style="color: #ce9178;">"--- get(1) → "</span> + cache.get(<span style="color: #b5cea8;">1</span>) + <span style="color: #ce9178;">" ---"</span>);
+        cache.printCache();
+        
+        System.out.println(<span style="color: #ce9178;">"--- get(1) → "</span> + cache.get(<span style="color: #b5cea8;">1</span>) + <span style="color: #ce9178;">" --- (freq now 3)"</span>);
+        cache.printCache();
+        
+        <span style="color: #608b4e;">// Access key 2 once</span>
+        System.out.println(<span style="color: #ce9178;">"--- get(2) → "</span> + cache.get(<span style="color: #b5cea8;">2</span>) + <span style="color: #ce9178;">" ---"</span>);
+        cache.printCache();
+        
+        <span style="color: #608b4e;">// Now: key1 has freq=3, key2 has freq=2, key3 has freq=1</span>
+        <span style="color: #608b4e;">// Key3 should be evicted (lowest frequency)</span>
+        
+        System.out.println(<span style="color: #ce9178;">"--- put(4, 400) - EVICTION! ---"</span>);
+        System.out.println(<span style="color: #ce9178;">"(Key 3 has lowest freq=1, so it gets evicted)"</span>);
+        cache.put(<span style="color: #b5cea8;">4</span>, <span style="color: #b5cea8;">400</span>);
+        cache.printCache();
+        
+        <span style="color: #608b4e;">// Verify key 3 was evicted</span>
+        System.out.println(<span style="color: #ce9178;">"--- get(3) → "</span> + cache.get(<span style="color: #b5cea8;">3</span>) + <span style="color: #ce9178;">" --- (was evicted)"</span>);
+        
+        <span style="color: #608b4e;">// Test LRU tiebreaker</span>
+        System.out.println(<span style="color: #ce9178;">"\n--- Testing LRU tiebreaker ---"</span>);
+        System.out.println(<span style="color: #ce9178;">"--- put(5, 500) - EVICTION with tiebreaker! ---"</span>);
+        System.out.println(<span style="color: #ce9178;">"(Key 4 is LRU among freq=1, so it gets evicted)"</span>);
+        cache.put(<span style="color: #b5cea8;">5</span>, <span style="color: #b5cea8;">500</span>);
+        cache.printCache();
+        
+        System.out.println(<span style="color: #ce9178;">"--- get(4) → "</span> + cache.get(<span style="color: #b5cea8;">4</span>) + <span style="color: #ce9178;">" --- (was evicted)"</span>);
+        
+        <span style="color: #608b4e;">// Final state</span>
+        System.out.println(<span style="color: #ce9178;">"\n═══════════════════════════════════════════"</span>);
+        System.out.println(<span style="color: #ce9178;">"        FINAL STATE"</span>);
+        System.out.println(<span style="color: #ce9178;">"═══════════════════════════════════════════"</span>);
+        cache.printCache();
+        
+        System.out.println(<span style="color: #ce9178;">"Keys in cache: 1, 2, 5"</span>);
+        System.out.println(<span style="color: #ce9178;">"get(1) = "</span> + cache.get(<span style="color: #b5cea8;">1</span>) + <span style="color: #ce9178;">" (freq now 4)"</span>);
+        System.out.println(<span style="color: #ce9178;">"get(2) = "</span> + cache.get(<span style="color: #b5cea8;">2</span>) + <span style="color: #ce9178;">" (freq now 3)"</span>);
+        System.out.println(<span style="color: #ce9178;">"get(5) = "</span> + cache.get(<span style="color: #b5cea8;">5</span>) + <span style="color: #ce9178;">" (freq now 2)"</span>);
+        
+        System.out.println(<span style="color: #ce9178;">"\nFinal frequencies:"</span>);
+        cache.printCache();
+    }
+}
+</pre>
+                        </div>
+
+                        <h3 style="color: #16a085;">📊 Complexity Summary</h3>
+                        <div
+                            style="background: #fff; padding: 15px; border: 1px solid #16a085; border-radius: 5px; margin: 10px 0;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr style="background: #16a085; color: white;">
+                                    <th style="padding: 10px; text-align: left;">Data Structure</th>
+                                    <th style="padding: 10px; text-align: center;">Get</th>
+                                    <th style="padding: 10px; text-align: center;">Put</th>
+                                    <th style="padding: 10px; text-align: center;">Space</th>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>HashMap</strong>
+                                    </td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">O(1)
+                                        avg</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">O(1)
+                                        avg</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">O(n)
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>LRU Cache</strong>
+                                    </td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">O(1)
+                                    </td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">O(1)
+                                    </td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">
+                                        O(capacity)</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px;"><strong>LFU Cache</strong></td>
+                                    <td style="padding: 10px; text-align: center;">O(1)</td>
+                                    <td style="padding: 10px; text-align: center;">O(1)</td>
+                                    <td style="padding: 10px; text-align: center;">O(capacity)</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </li>
+
+                    <li><strong>Multi-map (one key -> multiple values):</strong> Java doesn’t have a standard MultiMap
+                        (where a key maps to a collection of values), but it’s a common design need. For example, “a
+                        dictionary of word -> list of meanings” or “user -> list of orders”. The typical implementation
+                        is to use a Map from K to List&lt;V&gt; or Set&lt;V&gt;. The pattern here: if you get a new
+                        value for a key, you check the map; if the key exists, add to the list, otherwise create a new
+                        list. Some libraries like Guava provide MultiMap classes, but in core Java you manage the list
+                        manually. In an interview, if a design calls for grouping values by a key, describing this
+                        pattern is good. It shows you recognize when a “map of collections” is needed. Also consider
+                        iteration order if needed – perhaps use LinkedHashMap of key to List if insertion order of keys
+                        matters, etc.</li>
+
+
+                    <li><strong>Bi-directional maps (BiMap):</strong> Occasionally, you may need to look up by value as
+                        well as by key (assuming the mapping is one-to-one). A classic example is a user ID <-> username
+                            mapping, where you want to find ID by username or username by ID. One way is to maintain two
+                            maps (forward and reverse) and keep them in sync. If the design calls for that, mention it:
+                            “We can use two HashMaps – one mapping ID -> name and one mapping name -> ID. Every time we
+                            insert or remove, we update both. This provides O(1) lookups in either direction.” Guava’s
+                            BiMap is a ready-made solution, but again if focusing on core Java, manual is fine. Be
+                            careful to handle consistency (e.g., remove from both maps, ensure values are unique if
+                            using them as keys in the inverse map).</li>
+
+
+                    <li><strong>Customized key equality:</strong> Sometimes the default way Java compares keys (using
+                        equals()) isn’t what you want. We talked about IdentityHashMap which uses ==. Another scenario
+                        is case-insensitive string keys – e.g., mapping “USA” and “usa” to the same value. Java’s
+                        solution would be to use a TreeMap with <code>String.CASE_INSENSITIVE_ORDER</code> comparator,
+                        or to wrap keys by lowercasing them on insertion. You could also use Apache Commons’
+                        CaseInsensitiveMap which normalizes keys. In an interview context, if someone asks “how would
+                        you implement a case-insensitive lookup?” you can say: “One way is to convert all keys to a
+                        standard case (like lower-case) before using them in a HashMap (this way the map treats ‘USA’
+                        and ‘usa’ as the same key). Alternatively, use a TreeMap with a case-insensitive Comparator for
+                        keys, which will order and equate “USA” and “usa” as equal.” This shows you can tweak map
+                        behavior to meet requirements.</li>
+
+
+                    <li><strong>Imposing capacity or custom eviction:</strong> We saw LRU (time-based or usage-based
+                        eviction). Another policy might be FIFO eviction (evict in the order of insertion, regardless of
+                        usage). That could be done with a normal LinkedHashMap in insertion-order without accessOrder,
+                        combined with removeEldestEntry logic – effectively a FIFO cache. Or a size-limited map where
+                        you want to drop entries if memory usage is high – you might periodically check size and trim,
+                        or use weak refs as discussed. The key is understanding how to hook into a map’s lifecycle
+                        (LinkedHashMap’s hook or by monitoring .size() in your operations).</li>
+
+
+                    <li><strong>Using Map in Object-Oriented Designs:</strong> In LLD rounds, sometimes you design
+                        classes and relationships, and a Map is used as an internal data structure. E.g., design a
+                        parking lot system – you might use a Map&lt;SpotID, Vehicle&gt; to track occupied spots, or
+                        Map&lt;VehicleID, Ticket&gt;. Design an address book – Map&lt;Name, ContactDetails&gt; or maybe
+                        a multi-map if people can have same name. Design a library system – Map&lt;BookID, Book&gt; for
+                        quick lookup, etc. When you incorporate maps in such designs, articulate why: “Using a Map here
+                        allows quick lookup by ID, which is essential for performance when checking out a book or
+                        finding a parking spot.” Also consider whether an order is needed or if concurrency is an issue
+                        in that system. For example, a library system might not need concurrent maps if all operations
+                        funnel through a single thread or transactions, but a web-based system might have concurrent
+                        requests, so then a ConcurrentHashMap or proper locking in service layer is needed. Always tie
+                        the choice of map to the requirements (throughput, ordering, memory, etc.).</li>
+
+
+                    <li><strong>Avoiding pitfalls in designs:</strong> A notable pitfall: using a HashMap in a
+                        concurrent context without proper safety can lead to bugs that are hard to detect in testing but
+                        show up in production (e.g., infinite loop in old HashMap during resize under concurrency – if
+                        you recall, before Java 8, concurrent put operations on HashMap could cause a linked list cycle
+                        due to race, freezing threads forever). So if an interviewer hints at “what if multiple threads
+                        write to this map?”, the safe answer is use a thread-safe map or synchronize. Another pitfall:
+                        accidentally using a mutable object as a key and then mutating it – mention that if relevant:
+                        “We must ensure the key’s hashCode doesn’t change while it’s in the map; otherwise the entry
+                        becomes unreachable in the map.”</li>
+
+
+                    <li><strong>Performance trade-offs:</strong> If a design is performance-critical, you might compare
+                        options. E.g., “We expect millions of entries and frequent lookups, so a HashMap (O(1) average)
+                        is preferred over TreeMap (O(log n)). We don’t need sorting, so the extra overhead of TreeMap is
+                        unnecessary. Also, we’ll avoid LinkedHashMap if we don’t need ordering, to save the slight cost
+                        of maintaining the linked list.” Or conversely, “We absolutely need sorted order for this
+                        feature, so even though TreeMap is O(log n), that’s acceptable; we can also consider storing
+                        data in a HashMap and sorting on demand if reads are rare, but TreeMap gives us a cleaner
+                        solution if reads are frequent.” This kind of reasoning shows you understand when each map is
+                        appropriate in real-world terms.</li>
+
+
+                    <li><strong>Iteration patterns:</strong> If you need to iterate through a map’s entries frequently,
+                        consider that LinkedHashMap guarantees a specific order at slight cost, whereas HashMap gives no
+                        guarantees but in practice has a pseudo-random order that can even change when rehashed. If
+                        deterministic output is needed, go for an ordered map. If not, HashMap is fine. If you need to
+                        repeatedly find the smallest or largest entry and remove it, TreeMap (or a PriorityQueue outside
+                        of maps) is a good structure. Recognizing these patterns is valuable.</li>
+                    </ul>
+                </div>
+            </section>
+
+
+    </div>
+
+</body>
+
+</html>
