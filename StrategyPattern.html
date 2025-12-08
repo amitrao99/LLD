@@ -1,0 +1,2023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Singleton Pattern Guide</title>
+    <!-- Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text: #333;
+            --border: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            border-bottom: 3px solid var(--accent);
+            padding-bottom: 15px;
+            margin-top: 0;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: var(--secondary);
+            font-size: 1.8rem;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: var(--secondary);
+            font-size: 1.4rem;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        p {
+            margin-bottom: 16px;
+        }
+
+        ul {
+            margin-bottom: 16px;
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        strong {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        code {
+            font-family: 'Fira Code', Consolas, Monaco, 'Andale Mono', monospace;
+            background-color: #f4f4f4;
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: #e01e5a;
+            font-size: 0.9em;
+        }
+
+        pre {
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 0.95em;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table thead tr {
+            background-color: var(--primary);
+            color: #ffffff;
+            text-align: left;
+        }
+
+        table th, table td {
+            padding: 12px 15px;
+        }
+
+        table tbody tr {
+            border-bottom: 1px solid #dddddd;
+        }
+
+        table tbody tr:nth-of-type(even) {
+            background-color: #f9f9f9;
+        }
+
+        table tbody tr:last-of-type {
+            border-bottom: 2px solid var(--primary);
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: #ddd;
+            margin: 40px 0;
+        }
+        
+        blockquote {
+            border-left: 4px solid var(--accent);
+            margin: 20px 0;
+            padding: 10px 20px;
+            background-color: #f9f9f9;
+            color: #555;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+<p><strong>The Strategy pattern is a behavioral design pattern that lets you define a family of algorithms, encapsulate each one as a separate class, and make them interchangeable.</strong></p>
+<p>Think of it this way: Instead of having one class with multiple conditional statements (if/else or switch) to choose different behaviors, you extract each behavior into its own class. The main class then delegates the work to one of these behavior classes.</p>
+<h3>Core Components:</h3>
+<p>1. <strong>Strategy Interface</strong> - Defines the common interface for all algorithms</p>
+<p>2. <strong>Concrete Strategies</strong> - Different implementations of the strategy interface (the actual algorithms)</p>
+<p>3. <strong>Context</strong> - The class that uses a Strategy. It maintains a reference to a Strategy object and delegates the algorithm execution to it</p>
+<h3>Simple Example:</h3>
+<p>Imagine a payment system:</p>
+<pre><code class="language-java">
+// Strategy Interface
+
+interface PaymentStrategy {
+
+    void pay(int amount);
+
+}
+
+
+
+// Concrete Strategies
+
+class CreditCardPayment implements PaymentStrategy {
+
+    public void pay(int amount) {
+
+        System.out.println(&quot;Paid &quot; + amount + &quot; using Credit Card&quot;);
+
+    }
+
+}
+
+
+
+class PayPalPayment implements PaymentStrategy {
+
+    public void pay(int amount) {
+
+        System.out.println(&quot;Paid &quot; + amount + &quot; using PayPal&quot;);
+
+    }
+
+}
+
+
+
+// Context
+
+class ShoppingCart {
+
+    private PaymentStrategy paymentStrategy;
+
+    
+
+    public void setPaymentStrategy(PaymentStrategy strategy) {
+
+        this.paymentStrategy = strategy;
+
+    }
+
+    
+
+    public void checkout(int amount) {
+
+        paymentStrategy.pay(amount);
+
+    }
+
+}
+
+</code></pre>
+<p><strong>The key idea:</strong> The behavior (payment method) can be changed at runtime by swapping the strategy object.</p>
+<hr>
+<h2>2. Why Use Strategy Pattern? - Problems It Solves</h2>
+<h3>The Problems Without Strategy Pattern:</h3>
+<p><strong>Problem 1: Messy Conditional Logic</strong></p>
+<pre><code class="language-java">
+class PaymentProcessor {
+
+    public void processPayment(String type, int amount) {
+
+        if (type.equals(&quot;CREDIT_CARD&quot;)) {
+
+            // Credit card logic
+
+            System.out.println(&quot;Processing credit card...&quot;);
+
+        } else if (type.equals(&quot;PAYPAL&quot;)) {
+
+            // PayPal logic
+
+            System.out.println(&quot;Processing PayPal...&quot;);
+
+        } else if (type.equals(&quot;BITCOIN&quot;)) {
+
+            // Bitcoin logic
+
+            System.out.println(&quot;Processing Bitcoin...&quot;);
+
+        }
+
+        // What if we need to add 10 more payment methods?
+
+    }
+
+}
+
+</code></pre>
+<p><strong>Issues:</strong></p>
+<ul>
+<li>Violates Open/Closed Principle (you must modify existing code to add new behavior)</li>
+<li>Hard to test individual payment methods</li>
+<li>The class becomes bloated and hard to maintain</li>
+<li>All payment logic is tightly coupled in one place</li>
+</ul>
+<hr>
+<h3>How Strategy Pattern Solves These:</h3>
+<p><strong>Solution: Extract each behavior into its own class</strong></p>
+<pre><code class="language-java">
+// Now adding a new payment method is just creating a new class
+
+class CryptoPayment implements PaymentStrategy {
+
+    public void pay(int amount) {
+
+        System.out.println(&quot;Paid with Crypto&quot;);
+
+    }
+
+}
+
+</code></pre>
+<hr>
+<h3>Real-World Use Cases:</h3>
+<p>1. <strong>Sorting Algorithms</strong> - Different sorting strategies (QuickSort, MergeSort, BubbleSort) based on data size</p>
+<p>2. <strong>Compression</strong> - Different compression algorithms (ZIP, RAR, GZIP)</p>
+<p>3. <strong>Navigation Routes</strong> - Walking, driving, cycling routes in a map app</p>
+<p>4. <strong>Validation Rules</strong> - Different validation strategies for different form fields</p>
+<p>5. <strong>Pricing Strategies</strong> - Regular price, discount, seasonal pricing</p>
+<p>6. <strong>Authentication</strong> - OAuth, JWT, Basic Auth</p>
+<hr>
+<h3>Key Benefits:</h3>
+<p>✅ <strong>Open/Closed Principle</strong> - Open for extension, closed for modification</p>
+<p>✅ <strong>Single Responsibility</strong> - Each strategy class has one job</p>
+<p>✅ <strong>Runtime Flexibility</strong> - Switch behaviors on the fly</p>
+<p>✅ <strong>Easier Testing</strong> - Test each strategy independently</p>
+<p>✅ <strong>Eliminates Conditionals</strong> - No more long if/else chains</p>
+<hr>
+<p>Ready to move to <strong>the different ways to implement Strategy pattern</strong>?</p>
+<h2>3. Different Ways to Implement Strategy Pattern</h2>
+<p>Let me show you the various approaches with examples:</p>
+<hr>
+<h3><strong>Approach 1: Traditional - Setter Injection</strong></h3>
+<pre><code class="language-java">
+// Strategy Interface
+
+interface PaymentStrategy {
+
+    void pay(int amount);
+
+}
+
+
+
+// Concrete Strategies
+
+class CreditCardPayment implements PaymentStrategy {
+
+    public void pay(int amount) {
+
+        System.out.println(&quot;Credit Card: $&quot; + amount);
+
+    }
+
+}
+
+
+
+class PayPalPayment implements PaymentStrategy {
+
+    public void pay(int amount) {
+
+        System.out.println(&quot;PayPal: $&quot; + amount);
+
+    }
+
+}
+
+
+
+// Context with Setter
+
+class ShoppingCart {
+
+    private PaymentStrategy strategy;
+
+    
+
+    public void setPaymentStrategy(PaymentStrategy strategy) {
+
+        this.strategy = strategy;
+
+    }
+
+    
+
+    public void checkout(int amount) {
+
+        strategy.pay(amount);
+
+    }
+
+}
+
+
+
+// Usage
+
+ShoppingCart cart = new ShoppingCart();
+
+cart.setPaymentStrategy(new CreditCardPayment());
+
+cart.checkout(100);
+
+
+
+cart.setPaymentStrategy(new PayPalPayment());
+
+cart.checkout(200);
+
+</code></pre>
+<p><strong>When to use:</strong> When you need to change strategy multiple times during object lifetime.</p>
+<hr>
+<h3><strong>Approach 2: Constructor Injection</strong></h3>
+<pre><code class="language-java">
+class ShoppingCart {
+
+    private PaymentStrategy strategy;
+
+    
+
+    // Strategy passed at creation time
+
+    public ShoppingCart(PaymentStrategy strategy) {
+
+        this.strategy = strategy;
+
+    }
+
+    
+
+    public void checkout(int amount) {
+
+        strategy.pay(amount);
+
+    }
+
+}
+
+
+
+// Usage
+
+ShoppingCart cart1 = new ShoppingCart(new CreditCardPayment());
+
+cart1.checkout(100);
+
+
+
+ShoppingCart cart2 = new ShoppingCart(new PayPalPayment());
+
+cart2.checkout(200);
+
+</code></pre>
+<p><strong>When to use:</strong> When strategy is set once and doesn't change (immutability preferred).</p>
+<hr>
+<h3><strong>Approach 3: Functional Interface + Lambda (Java 8+)</strong> ⭐ Modern!</h3>
+<pre><code class="language-java">
+// Functional interface
+
+@FunctionalInterface
+
+interface PaymentStrategy {
+
+    void pay(int amount);
+
+}
+
+
+
+class ShoppingCart {
+
+    private PaymentStrategy strategy;
+
+    
+
+    public void setPaymentStrategy(PaymentStrategy strategy) {
+
+        this.strategy = strategy;
+
+    }
+
+    
+
+    public void checkout(int amount) {
+
+        strategy.pay(amount);
+
+    }
+
+}
+
+
+
+// Usage with Lambdas - No need for separate classes!
+
+ShoppingCart cart = new ShoppingCart();
+
+
+
+cart.setPaymentStrategy(amount -&gt; 
+
+    System.out.println(&quot;Credit Card: $&quot; + amount));
+
+cart.checkout(100);
+
+
+
+cart.setPaymentStrategy(amount -&gt; 
+
+    System.out.println(&quot;PayPal: $&quot; + amount));
+
+cart.checkout(200);
+
+</code></pre>
+<p><strong>When to use:</strong> Simple strategies with single method. Very clean and concise!</p>
+<hr>
+<h3><strong>Approach 4: Using Enums (Fixed Set of Strategies)</strong></h3>
+<pre><code class="language-java">
+enum PaymentStrategy {
+
+    CREDIT_CARD {
+
+        public void pay(int amount) {
+
+            System.out.println(&quot;Credit Card: $&quot; + amount);
+
+        }
+
+    },
+
+    PAYPAL {
+
+        public void pay(int amount) {
+
+            System.out.println(&quot;PayPal: $&quot; + amount);
+
+        }
+
+    },
+
+    BITCOIN {
+
+        public void pay(int amount) {
+
+            System.out.println(&quot;Bitcoin: $&quot; + amount);
+
+        }
+
+    };
+
+    
+
+    public abstract void pay(int amount);
+
+}
+
+
+
+class ShoppingCart {
+
+    private PaymentStrategy strategy;
+
+    
+
+    public void setPaymentStrategy(PaymentStrategy strategy) {
+
+        this.strategy = strategy;
+
+    }
+
+    
+
+    public void checkout(int amount) {
+
+        strategy.pay(amount);
+
+    }
+
+}
+
+
+
+// Usage
+
+ShoppingCart cart = new ShoppingCart();
+
+cart.setPaymentStrategy(PaymentStrategy.CREDIT_CARD);
+
+cart.checkout(100);
+
+
+
+cart.setPaymentStrategy(PaymentStrategy.PAYPAL);
+
+cart.checkout(200);
+
+</code></pre>
+<p><strong>When to use:</strong> Fixed, known set of strategies that won't change.</p>
+<hr>
+<h3><strong>Approach 5: Anonymous Classes (One-off Strategies)</strong></h3>
+<pre><code class="language-java">
+ShoppingCart cart = new ShoppingCart();
+
+
+
+// Define strategy on the fly
+
+cart.setPaymentStrategy(new PaymentStrategy() {
+
+    public void pay(int amount) {
+
+        System.out.println(&quot;Custom Payment: $&quot; + amount);
+
+    }
+
+});
+
+cart.checkout(100);
+
+</code></pre>
+<p><strong>When to use:</strong> Quick, one-time use strategies. Though lambdas are cleaner for this.</p>
+<hr>
+<h3><strong>Approach 6: Method References</strong></h3>
+<pre><code class="language-java">
+class PaymentProcessor {
+
+    public void processCreditCard(int amount) {
+
+        System.out.println(&quot;Credit Card: $&quot; + amount);
+
+    }
+
+    
+
+    public void processPayPal(int amount) {
+
+        System.out.println(&quot;PayPal: $&quot; + amount);
+
+    }
+
+}
+
+
+
+// Usage
+
+PaymentProcessor processor = new PaymentProcessor();
+
+ShoppingCart cart = new ShoppingCart();
+
+
+
+cart.setPaymentStrategy(processor::processCreditCard);
+
+cart.checkout(100);
+
+
+
+cart.setPaymentStrategy(processor::processPayPal);
+
+cart.checkout(200);
+
+</code></pre>
+<p><strong>When to use:</strong> When you have existing methods that match the strategy signature.</p>
+<hr>
+<h2>Quick Comparison:</h2>
+<table><thead><tr><th>Approach</th><th>Best For</th><th>Flexibility</th><th>Verbosity</th></tr></thead><tbody><tr><td>Traditional Classes</td><td>Complex strategies with state</td><td>High</td><td>High</td></tr><tr><td>Lambdas</td><td>Simple, stateless strategies</td><td>Medium</td><td>Low</td></tr><tr><td>Enums</td><td>Fixed set of strategies</td><td>Low</td><td>Medium</td></tr><tr><td>Anonymous Classes</td><td>Quick one-offs</td><td>Medium</td><td>High</td></tr></tbody></table>
+<hr>
+<p>Ready to pick <strong>one pattern to master deeply</strong>? I'd recommend either <strong>Traditional with Constructor Injection</strong> (enterprise standard) or <strong>Functional/Lambda approach</strong> (modern and clean). Which direction interests you more?</p>
+<p><strong>You're thinking 100% CORRECT!</strong></p>
+<p>For interviews, <strong>Traditional Constructor Injection</strong> is the way to go. Here's why:</p>
+<h3>Why Traditional > Lambda for Interviews:</h3>
+<p>1. <strong>Shows Full Understanding</strong> - Interviewers want to see you understand OOP, interfaces, and class design. Lambdas might look like you're taking shortcuts.</p>
+<p>2. <strong>Easy to Extend</strong> - During interviews, they often say "Now add another strategy" or "Add some state to your strategy". With classes, this is trivial. With lambdas, you'd have to refactor.</p>
+<p>3. <strong>Demonstrates SOLID</strong> - You explicitly show:</p>
+<ul>
+<li><strong>S</strong>ingle Responsibility (each strategy class does one thing)</li>
+<li><strong>O</strong>pen/Closed (add new strategies without changing existing code)</li>
+<li><strong>L</strong>iskov Substitution (strategies are interchangeable)</li>
+<li><strong>I</strong>nterface Segregation (clean interface)</li>
+<li><strong>D</strong>ependency Inversion (depend on abstraction)</li>
+</ul>
+<p>4. <strong>Clear Communication</strong> - Interviewers can easily follow your code. Verbose is GOOD in interviews because it shows your thought process.</p>
+<p>5. <strong>Industry Standard</strong> - Most companies still use traditional OOP patterns in their codebases.</p>
+<hr>
+<h2>The ONE Pattern to Master (Interview-Ready)</h2>
+<p>Let me give you a <strong>template you can memorize and reproduce in any interview</strong>:</p>
+<pre><code class="language-java">
+// STEP 1: Define Strategy Interface
+
+interface PaymentStrategy {
+
+    void pay(double amount);
+
+}
+
+
+
+// STEP 2: Create Concrete Strategy Classes
+
+class CreditCardStrategy implements PaymentStrategy {
+
+    private String cardNumber;
+
+    private String name;
+
+    
+
+    public CreditCardStrategy(String cardNumber, String name) {
+
+        this.cardNumber = cardNumber;
+
+        this.name = name;
+
+    }
+
+    
+
+    @Override
+
+    public void pay(double amount) {
+
+        System.out.println(amount + &quot; paid using Credit Card&quot;);
+
+    }
+
+}
+
+
+
+class PayPalStrategy implements PaymentStrategy {
+
+    private String email;
+
+    
+
+    public PayPalStrategy(String email) {
+
+        this.email = email;
+
+    }
+
+    
+
+    @Override
+
+    public void pay(double amount) {
+
+        System.out.println(amount + &quot; paid using PayPal&quot;);
+
+    }
+
+}
+
+
+
+class CashStrategy implements PaymentStrategy {
+
+    @Override
+
+    public void pay(double amount) {
+
+        System.out.println(amount + &quot; paid in Cash&quot;);
+
+    }
+
+}
+
+
+
+// STEP 3: Context Class (Constructor Injection)
+
+class ShoppingCart {
+
+    private PaymentStrategy paymentStrategy;
+
+    
+
+    // Constructor Injection
+
+    public ShoppingCart(PaymentStrategy paymentStrategy) {
+
+        this.paymentStrategy = paymentStrategy;
+
+    }
+
+    
+
+    public void checkout(double amount) {
+
+        // Could add validation, calculations, etc.
+
+        paymentStrategy.pay(amount);
+
+    }
+
+}
+
+
+
+// STEP 4: Client/Main Usage
+
+public class StrategyPatternDemo {
+
+    public static void main(String[] args) {
+
+        // Create strategies
+
+        PaymentStrategy creditCard = new CreditCardStrategy(&quot;1234-5678&quot;, &quot;John Doe&quot;);
+
+        PaymentStrategy paypal = new PayPalStrategy(&quot;john@email.com&quot;);
+
+        PaymentStrategy cash = new CashStrategy();
+
+        
+
+        // Use different strategies
+
+        ShoppingCart cart1 = new ShoppingCart(creditCard);
+
+        cart1.checkout(100.0);
+
+        
+
+        ShoppingCart cart2 = new ShoppingCart(paypal);
+
+        cart2.checkout(200.0);
+
+        
+
+        ShoppingCart cart3 = new ShoppingCart(cash);
+
+        cart3.checkout(50.0);
+
+    }
+
+}
+
+</code></pre>
+<hr>
+<h2>The Mental Model to Remember (4 Steps):</h2>
+<p>1. <strong>Interface</strong> - Define what all strategies must do</p>
+<p>2. <strong>Concrete Classes</strong> - Implement the interface (2-3 examples)</p>
+<p>3. <strong>Context</strong> - Takes strategy via constructor, uses it</p>
+<p>4. <strong>Client</strong> - Creates strategies and passes to context</p>
+<hr>
+<h2>Interview Pro Tips:</h2>
+<p>✅ <strong>Start by explaining the problem</strong> - "Without Strategy pattern, we'd have if/else statements that violate Open/Closed principle"</p>
+<p>✅ <strong>Draw a UML diagram</strong> (if whiteboard) - Shows you think architecturally</p>
+<p>✅ <strong>Add meaningful state to strategies</strong> - Like <code>cardNumber</code>, <code>email</code> - shows you understand they're real objects, not just functions</p>
+<p>✅ <strong>Mention benefits</strong> - "This makes it easy to add new payment methods without changing existing code"</p>
+<p>✅ <strong>Be ready to extend</strong> - If they say "add Bitcoin payment", you just create a new class</p>
+<p>❌ <strong>Don't over-engineer</strong> - No need for factories, builders, etc. unless they specifically ask</p>
+<p>❌ <strong>Don't use lambdas</strong> - Unless they specifically ask for Java 8+ features</p>
+<hr>
+<p><strong>My advice: Practice writing this exact structure 3-4 times from memory. Change the domain (sorting, compression, discount calculation) but keep the structure identical. That's your interview superpower!</strong></p>
+<p>Want to do a practice round where I give you a problem and you implement it using this pattern?</p>
+<p>Excellent! Let's dive into <strong>real-world complexity</strong>. I'll show you different scenarios that go way beyond simple examples.</p>
+<hr>
+<h2>Scenario 1: Complex Strategy with Internal State & Logic</h2>
+<p><strong>Problem:</strong> E-commerce discount calculation with business rules</p>
+<pre><code class="language-java">
+// Strategy Interface
+
+interface DiscountStrategy {
+
+    double calculateDiscount(Order order);
+
+    boolean isApplicable(Order order);
+
+}
+
+
+
+// Supporting Classes
+
+class Order {
+
+    private double totalAmount;
+
+    private String customerType; // &quot;NEW&quot;, &quot;REGULAR&quot;, &quot;VIP&quot;
+
+    private int itemCount;
+
+    private boolean hasPromoCode;
+
+    
+
+    // Constructor, getters...
+
+    public Order(double totalAmount, String customerType, int itemCount, boolean hasPromoCode) {
+
+        this.totalAmount = totalAmount;
+
+        this.customerType = customerType;
+
+        this.itemCount = itemCount;
+
+        this.hasPromoCode = hasPromoCode;
+
+    }
+
+    
+
+    public double getTotalAmount() { return totalAmount; }
+
+    public String getCustomerType() { return customerType; }
+
+    public int getItemCount() { return itemCount; }
+
+    public boolean hasPromoCode() { return hasPromoCode; }
+
+}
+
+
+
+// Complex Strategy 1: Tiered Discount with Multiple Rules
+
+class TieredDiscountStrategy implements DiscountStrategy {
+
+    private static final double TIER1_THRESHOLD = 100.0;
+
+    private static final double TIER2_THRESHOLD = 500.0;
+
+    private static final double TIER3_THRESHOLD = 1000.0;
+
+    
+
+    private double tier1Percent;
+
+    private double tier2Percent;
+
+    private double tier3Percent;
+
+    
+
+    public TieredDiscountStrategy(double tier1, double tier2, double tier3) {
+
+        this.tier1Percent = tier1;
+
+        this.tier2Percent = tier2;
+
+        this.tier3Percent = tier3;
+
+    }
+
+    
+
+    @Override
+
+    public boolean isApplicable(Order order) {
+
+        return order.getTotalAmount() &gt;= TIER1_THRESHOLD;
+
+    }
+
+    
+
+    @Override
+
+    public double calculateDiscount(Order order) {
+
+        double amount = order.getTotalAmount();
+
+        double discount = 0;
+
+        
+
+        if (amount &gt;= TIER3_THRESHOLD) {
+
+            discount = amount * tier3Percent;
+
+        } else if (amount &gt;= TIER2_THRESHOLD) {
+
+            discount = amount * tier2Percent;
+
+        } else if (amount &gt;= TIER1_THRESHOLD) {
+
+            discount = amount * tier1Percent;
+
+        }
+
+        
+
+        // Additional logic: cap discount at 30% of order
+
+        double maxDiscount = amount * 0.30;
+
+        return Math.min(discount, maxDiscount);
+
+    }
+
+}
+
+
+
+// Complex Strategy 2: Loyalty Points with Accumulation Logic
+
+class LoyaltyPointsDiscountStrategy implements DiscountStrategy {
+
+    private LoyaltyPointsService loyaltyService; // External dependency
+
+    private String customerId;
+
+    private int pointsToRedeem;
+
+    
+
+    public LoyaltyPointsDiscountStrategy(LoyaltyPointsService service, 
+
+                                         String customerId, 
+
+                                         int pointsToRedeem) {
+
+        this.loyaltyService = service;
+
+        this.customerId = customerId;
+
+        this.pointsToRedeem = pointsToRedeem;
+
+    }
+
+    
+
+    @Override
+
+    public boolean isApplicable(Order order) {
+
+        int availablePoints = loyaltyService.getPoints(customerId);
+
+        return availablePoints &gt;= pointsToRedeem &amp;&amp; order.getTotalAmount() &gt; 50;
+
+    }
+
+    
+
+    @Override
+
+    public double calculateDiscount(Order order) {
+
+        if (!isApplicable(order)) {
+
+            return 0;
+
+        }
+
+        
+
+        // Complex calculation: 100 points = $1 discount
+
+        double discount = pointsToRedeem / 100.0;
+
+        
+
+        // Deduct points (side effect!)
+
+        loyaltyService.deductPoints(customerId, pointsToRedeem);
+
+        
+
+        // Award new points for this purchase
+
+        int earnedPoints = (int) (order.getTotalAmount() * 0.1);
+
+        loyaltyService.addPoints(customerId, earnedPoints);
+
+        
+
+        return discount;
+
+    }
+
+}
+
+
+
+// Complex Strategy 3: Seasonal/Time-based with Blackout Dates
+
+class SeasonalDiscountStrategy implements DiscountStrategy {
+
+    private LocalDate startDate;
+
+    private LocalDate endDate;
+
+    private Set&lt;LocalDate&gt; blackoutDates;
+
+    private double discountPercent;
+
+    
+
+    public SeasonalDiscountStrategy(LocalDate start, LocalDate end, 
+
+                                    double discountPercent, 
+
+                                    Set&lt;LocalDate&gt; blackoutDates) {
+
+        this.startDate = start;
+
+        this.endDate = end;
+
+        this.discountPercent = discountPercent;
+
+        this.blackoutDates = blackoutDates;
+
+    }
+
+    
+
+    @Override
+
+    public boolean isApplicable(Order order) {
+
+        LocalDate today = LocalDate.now();
+
+        boolean inSeason = !today.isBefore(startDate) &amp;&amp; !today.isAfter(endDate);
+
+        boolean notBlackedOut = !blackoutDates.contains(today);
+
+        
+
+        return inSeason &amp;&amp; notBlackedOut;
+
+    }
+
+    
+
+    @Override
+
+    public double calculateDiscount(Order order) {
+
+        if (!isApplicable(order)) {
+
+            return 0;
+
+        }
+
+        return order.getTotalAmount() * discountPercent;
+
+    }
+
+}
+
+
+
+// Mock service for demonstration
+
+class LoyaltyPointsService {
+
+    private Map&lt;String, Integer&gt; pointsDatabase = new HashMap&lt;&gt;();
+
+    
+
+    public int getPoints(String customerId) {
+
+        return pointsDatabase.getOrDefault(customerId, 0);
+
+    }
+
+    
+
+    public void deductPoints(String customerId, int points) {
+
+        int current = getPoints(customerId);
+
+        pointsDatabase.put(customerId, current - points);
+
+    }
+
+    
+
+    public void addPoints(String customerId, int points) {
+
+        int current = getPoints(customerId);
+
+        pointsDatabase.put(customerId, current + points);
+
+    }
+
+}
+
+
+
+// Context with validation and error handling
+
+class PricingEngine {
+
+    private DiscountStrategy discountStrategy;
+
+    
+
+    public PricingEngine(DiscountStrategy discountStrategy) {
+
+        if (discountStrategy == null) {
+
+            throw new IllegalArgumentException(&quot;Discount strategy cannot be null&quot;);
+
+        }
+
+        this.discountStrategy = discountStrategy;
+
+    }
+
+    
+
+    public double calculateFinalPrice(Order order) {
+
+        if (order == null || order.getTotalAmount() &lt;= 0) {
+
+            throw new IllegalArgumentException(&quot;Invalid order&quot;);
+
+        }
+
+        
+
+        double discount = 0;
+
+        
+
+        if (discountStrategy.isApplicable(order)) {
+
+            discount = discountStrategy.calculateDiscount(order);
+
+            System.out.println(&quot;Discount applied: $&quot; + discount);
+
+        } else {
+
+            System.out.println(&quot;Discount not applicable for this order&quot;);
+
+        }
+
+        
+
+        double finalPrice = order.getTotalAmount() - discount;
+
+        return Math.max(finalPrice, 0); // Never negative
+
+    }
+
+}
+
+</code></pre>
+<p><strong>Key Complexity Points:</strong></p>
+<ul>
+<li>✅ Strategies have <strong>internal state</strong> (thresholds, dates, service dependencies)</li>
+<li>✅ Strategies have <strong>complex business logic</strong> (tiered calculations, date ranges)</li>
+<li>✅ Strategies can have <strong>side effects</strong> (deducting loyalty points)</li>
+<li>✅ Strategies validate their applicability (<code>isApplicable</code> method)</li>
+<li>✅ Context has <strong>validation and error handling</strong></li>
+</ul>
+<hr>
+<h2>Scenario 2: Runtime Strategy Selection Based on Conditions</h2>
+<p><strong>Problem:</strong> Choose compression strategy based on file type and size</p>
+<pre><code class="language-java">
+// Strategy Interface
+
+interface CompressionStrategy {
+
+    byte[] compress(byte[] data);
+
+    String getAlgorithmName();
+
+}
+
+
+
+// Concrete Strategies
+
+class GzipCompressionStrategy implements CompressionStrategy {
+
+    private int compressionLevel; // 1-9
+
+    
+
+    public GzipCompressionStrategy(int level) {
+
+        this.compressionLevel = level;
+
+    }
+
+    
+
+    @Override
+
+    public byte[] compress(byte[] data) {
+
+        System.out.println(&quot;Compressing with GZIP (level &quot; + compressionLevel + &quot;)&quot;);
+
+        // Actual GZIP compression logic
+
+        return data; // Simplified
+
+    }
+
+    
+
+    @Override
+
+    public String getAlgorithmName() {
+
+        return &quot;GZIP&quot;;
+
+    }
+
+}
+
+
+
+class LZ4CompressionStrategy implements CompressionStrategy {
+
+    @Override
+
+    public byte[] compress(byte[] data) {
+
+        System.out.println(&quot;Compressing with LZ4 (fast)&quot;);
+
+        // Actual LZ4 compression logic
+
+        return data; // Simplified
+
+    }
+
+    
+
+    @Override
+
+    public String getAlgorithmName() {
+
+        return &quot;LZ4&quot;;
+
+    }
+
+}
+
+
+
+class NoCompressionStrategy implements CompressionStrategy {
+
+    @Override
+
+    public byte[] compress(byte[] data) {
+
+        System.out.println(&quot;No compression applied&quot;);
+
+        return data;
+
+    }
+
+    
+
+    @Override
+
+    public String getAlgorithmName() {
+
+        return &quot;NONE&quot;;
+
+    }
+
+}
+
+
+
+// Strategy Factory/Selector
+
+class CompressionStrategySelector {
+
+    
+
+    public static CompressionStrategy selectStrategy(String fileType, long fileSizeBytes) {
+
+        
+
+        // Rule 1: Small files - no compression (overhead not worth it)
+
+        if (fileSizeBytes &lt; 1024) { // &lt; 1KB
+
+            return new NoCompressionStrategy();
+
+        }
+
+        
+
+        // Rule 2: Images - use fast compression
+
+        if (fileType.matches(&quot;.*\\.(jpg|jpeg|png|gif)$&quot;)) {
+
+            return new LZ4CompressionStrategy();
+
+        }
+
+        
+
+        // Rule 3: Text files - use high compression
+
+        if (fileType.matches(&quot;.*\\.(txt|log|csv|json|xml)$&quot;)) {
+
+            return new GzipCompressionStrategy(9); // Max compression
+
+        }
+
+        
+
+        // Rule 4: Large files - use medium compression for balance
+
+        if (fileSizeBytes &gt; 10_000_000) { // &gt; 10MB
+
+            return new GzipCompressionStrategy(6); // Balanced
+
+        }
+
+        
+
+        // Default: Fast compression
+
+        return new LZ4CompressionStrategy();
+
+    }
+
+}
+
+
+
+// Context with Strategy Selection
+
+class FileCompressor {
+
+    private CompressionStrategy strategy;
+
+    private String fileName;
+
+    private long fileSize;
+
+    
+
+    public FileCompressor(String fileName, long fileSize) {
+
+        this.fileName = fileName;
+
+        this.fileSize = fileSize;
+
+        // Runtime strategy selection based on file properties
+
+        this.strategy = CompressionStrategySelector.selectStrategy(fileName, fileSize);
+
+    }
+
+    
+
+    // Alternative: Allow manual override
+
+    public void setCompressionStrategy(CompressionStrategy strategy) {
+
+        this.strategy = strategy;
+
+    }
+
+    
+
+    public byte[] compressFile(byte[] fileData) {
+
+        System.out.println(&quot;File: &quot; + fileName + &quot; (&quot; + fileSize + &quot; bytes)&quot;);
+
+        System.out.println(&quot;Selected strategy: &quot; + strategy.getAlgorithmName());
+
+        
+
+        long startTime = System.nanoTime();
+
+        byte[] compressed = strategy.compress(fileData);
+
+        long endTime = System.nanoTime();
+
+        
+
+        double compressionRatio = (double) compressed.length / fileData.length;
+
+        System.out.println(&quot;Compression ratio: &quot; + String.format(&quot;%.2f&quot;, compressionRatio));
+
+        System.out.println(&quot;Time: &quot; + (endTime - startTime) / 1_000_000 + &quot; ms\n&quot;);
+
+        
+
+        return compressed;
+
+    }
+
+}
+
+
+
+// Usage
+
+public class RuntimeStrategyDemo {
+
+    public static void main(String[] args) {
+
+        byte[] dummyData = new byte[5000];
+
+        
+
+        // Automatic strategy selection
+
+        FileCompressor compressor1 = new FileCompressor(&quot;data.txt&quot;, 5000);
+
+        compressor1.compressFile(dummyData);
+
+        
+
+        FileCompressor compressor2 = new FileCompressor(&quot;photo.jpg&quot;, 500000);
+
+        compressor2.compressFile(dummyData);
+
+        
+
+        FileCompressor compressor3 = new FileCompressor(&quot;tiny.log&quot;, 500);
+
+        compressor3.compressFile(dummyData);
+
+        
+
+        // Manual override when needed
+
+        FileCompressor compressor4 = new FileCompressor(&quot;special.bin&quot;, 10000);
+
+        compressor4.setCompressionStrategy(new GzipCompressionStrategy(1)); // Force specific strategy
+
+        compressor4.compressFile(dummyData);
+
+    }
+
+}
+
+</code></pre>
+<p><strong>Key Complexity Points:</strong></p>
+<ul>
+<li>✅ <strong>Runtime strategy selection</strong> based on file properties</li>
+<li>✅ <strong>Strategy factory/selector pattern</strong> to encapsulate selection logic</li>
+<li>✅ <strong>Context collects metrics</strong> (compression ratio, time)</li>
+<li>✅ <strong>Hybrid approach</strong>: Auto-selection + manual override option</li>
+</ul>
+<hr>
+<h2>Scenario 3: Strategies with Dependencies and Chaining</h2>
+<p><strong>Problem:</strong> Data export with multiple transformations</p>
+<pre><code class="language-java">
+// Multiple related strategies
+
+interface DataExportStrategy {
+
+    String export(List&lt;Customer&gt; customers);
+
+    String getFormat();
+
+}
+
+
+
+interface DataValidationStrategy {
+
+    boolean validate(List&lt;Customer&gt; customers);
+
+    List&lt;String&gt; getValidationErrors();
+
+}
+
+
+
+interface DataTransformStrategy {
+
+    List&lt;Customer&gt; transform(List&lt;Customer&gt; customers);
+
+}
+
+
+
+// Domain model
+
+class Customer {
+
+    private String id;
+
+    private String name;
+
+    private String email;
+
+    private double totalSpent;
+
+    
+
+    public Customer(String id, String name, String email, double totalSpent) {
+
+        this.id = id;
+
+        this.name = name;
+
+        this.email = email;
+
+        this.totalSpent = totalSpent;
+
+    }
+
+    
+
+    // Getters...
+
+    public String getId() { return id; }
+
+    public String getName() { return name; }
+
+    public String getEmail() { return email; }
+
+    public double getTotalSpent() { return totalSpent; }
+
+    public void setTotalSpent(double totalSpent) { this.totalSpent = totalSpent; }
+
+}
+
+
+
+// Export Strategies
+
+class CSVExportStrategy implements DataExportStrategy {
+
+    private String delimiter;
+
+    
+
+    public CSVExportStrategy(String delimiter) {
+
+        this.delimiter = delimiter;
+
+    }
+
+    
+
+    @Override
+
+    public String export(List&lt;Customer&gt; customers) {
+
+        StringBuilder csv = new StringBuilder();
+
+        csv.append(&quot;ID&quot;).append(delimiter)
+
+           .append(&quot;Name&quot;).append(delimiter)
+
+           .append(&quot;Email&quot;).append(delimiter)
+
+           .append(&quot;TotalSpent\n&quot;);
+
+        
+
+        for (Customer c : customers) {
+
+            csv.append(c.getId()).append(delimiter)
+
+               .append(c.getName()).append(delimiter)
+
+               .append(c.getEmail()).append(delimiter)
+
+               .append(c.getTotalSpent()).append(&quot;\n&quot;);
+
+        }
+
+        return csv.toString();
+
+    }
+
+    
+
+    @Override
+
+    public String getFormat() {
+
+        return &quot;CSV&quot;;
+
+    }
+
+}
+
+
+
+class JSONExportStrategy implements DataExportStrategy {
+
+    private boolean prettyPrint;
+
+    
+
+    public JSONExportStrategy(boolean prettyPrint) {
+
+        this.prettyPrint = prettyPrint;
+
+    }
+
+    
+
+    @Override
+
+    public String export(List&lt;Customer&gt; customers) {
+
+        StringBuilder json = new StringBuilder();
+
+        String indent = prettyPrint ? &quot;  &quot; : &quot;&quot;;
+
+        String newline = prettyPrint ? &quot;\n&quot; : &quot;&quot;;
+
+        
+
+        json.append(&quot;[&quot;).append(newline);
+
+        for (int i = 0; i &lt; customers.size(); i++) {
+
+            Customer c = customers.get(i);
+
+            json.append(indent).append(&quot;{&quot;).append(newline)
+
+                .append(indent).append(indent).append(&quot;\&quot;id\&quot;: \&quot;&quot;).append(c.getId()).append(&quot;\&quot;,&quot;).append(newline)
+
+                .append(indent).append(indent).append(&quot;\&quot;name\&quot;: \&quot;&quot;).append(c.getName()).append(&quot;\&quot;,&quot;).append(newline)
+
+                .append(indent).append(indent).append(&quot;\&quot;email\&quot;: \&quot;&quot;).append(c.getEmail()).append(&quot;\&quot;,&quot;).append(newline)
+
+                .append(indent).append(indent).append(&quot;\&quot;totalSpent\&quot;: &quot;).append(c.getTotalSpent()).append(newline)
+
+                .append(indent).append(&quot;}&quot;);
+
+            if (i &lt; customers.size() - 1) json.append(&quot;,&quot;);
+
+            json.append(newline);
+
+        }
+
+        json.append(&quot;]&quot;);
+
+        return json.toString();
+
+    }
+
+    
+
+    @Override
+
+    public String getFormat() {
+
+        return &quot;JSON&quot;;
+
+    }
+
+}
+
+
+
+// Validation Strategies
+
+class EmailValidationStrategy implements DataValidationStrategy {
+
+    private List&lt;String&gt; errors = new ArrayList&lt;&gt;();
+
+    
+
+    @Override
+
+    public boolean validate(List&lt;Customer&gt; customers) {
+
+        errors.clear();
+
+        boolean isValid = true;
+
+        
+
+        for (Customer c : customers) {
+
+            if (c.getEmail() == null || !c.getEmail().contains(&quot;@&quot;)) {
+
+                errors.add(&quot;Invalid email for customer: &quot; + c.getId());
+
+                isValid = false;
+
+            }
+
+        }
+
+        return isValid;
+
+    }
+
+    
+
+    @Override
+
+    public List&lt;String&gt; getValidationErrors() {
+
+        return new ArrayList&lt;&gt;(errors);
+
+    }
+
+}
+
+
+
+// Transform Strategies
+
+class HighValueCustomerFilterStrategy implements DataTransformStrategy {
+
+    private double threshold;
+
+    
+
+    public HighValueCustomerFilterStrategy(double threshold) {
+
+        this.threshold = threshold;
+
+    }
+
+    
+
+    @Override
+
+    public List&lt;Customer&gt; transform(List&lt;Customer&gt; customers) {
+
+        return customers.stream()
+
+            .filter(c -&gt; c.getTotalSpent() &gt;= threshold)
+
+            .collect(Collectors.toList());
+
+    }
+
+}
+
+
+
+class AnonymizationStrategy implements DataTransformStrategy {
+
+    @Override
+
+    public List&lt;Customer&gt; transform(List&lt;Customer&gt; customers) {
+
+        List&lt;Customer&gt; anonymized = new ArrayList&lt;&gt;();
+
+        for (Customer c : customers) {
+
+            String maskedEmail = c.getEmail().replaceAll(&quot;(?&lt;=.{2}).(?=.*@)&quot;, &quot;*&quot;);
+
+            anonymized.add(new Customer(c.getId(), c.getName(), maskedEmail, c.getTotalSpent()));
+
+        }
+
+        return anonymized;
+
+    }
+
+}
+
+
+
+// Complex Context with Multiple Strategies
+
+class DataExportPipeline {
+
+    private DataValidationStrategy validationStrategy;
+
+    private DataTransformStrategy transformStrategy;
+
+    private DataExportStrategy exportStrategy;
+
+    
+
+    // Constructor injection for all strategies
+
+    public DataExportPipeline(DataValidationStrategy validationStrategy,
+
+                              DataTransformStrategy transformStrategy,
+
+                              DataExportStrategy exportStrategy) {
+
+        this.validationStrategy = validationStrategy;
+
+        this.transformStrategy = transformStrategy;
+
+        this.exportStrategy = exportStrategy;
+
+    }
+
+    
+
+    public String processAndExport(List&lt;Customer&gt; customers) {
+
+        System.out.println(&quot;=== Starting Export Pipeline ===&quot;);
+
+        System.out.println(&quot;Initial customer count: &quot; + customers.size());
+
+        
+
+        // Step 1: Validation
+
+        if (!validationStrategy.validate(customers)) {
+
+            System.err.println(&quot;Validation failed:&quot;);
+
+            for (String error : validationStrategy.getValidationErrors()) {
+
+                System.err.println(&quot;  - &quot; + error);
+
+            }
+
+            throw new RuntimeException(&quot;Data validation failed&quot;);
+
+        }
+
+        System.out.println(&quot;✓ Validation passed&quot;);
+
+        
+
+        // Step 2: Transformation
+
+        List&lt;Customer&gt; transformed = transformStrategy.transform(customers);
+
+        System.out.println(&quot;✓ Transformation applied&quot;);
+
+        System.out.println(&quot;  Customers after transform: &quot; + transformed.size());
+
+        
+
+        // Step 3: Export
+
+        String result = exportStrategy.export(transformed);
+
+        System.out.println(&quot;✓ Export completed in &quot; + exportStrategy.getFormat() + &quot; format&quot;);
+
+        System.out.println(&quot;=== Pipeline Complete ===\n&quot;);
+
+        
+
+        return result;
+
+    }
+
+}
+
+
+
+// Usage
+
+public class ComplexStrategyDemo {
+
+    public static void main(String[] args) {
+
+        List&lt;Customer&gt; customers = Arrays.asList(
+
+            new Customer(&quot;1&quot;, &quot;Alice&quot;, &quot;alice@email.com&quot;, 1500.0),
+
+            new Customer(&quot;2&quot;, &quot;Bob&quot;, &quot;bob@email.com&quot;, 500.0),
+
+            new Customer(&quot;3&quot;, &quot;Charlie&quot;, &quot;charlie@email.com&quot;, 2500.0),
+
+            new Customer(&quot;4&quot;, &quot;David&quot;, &quot;invalid-email&quot;, 800.0)
+
+        );
+
+        
+
+        // Pipeline 1: High-value customers to JSON
+
+        DataExportPipeline pipeline1 = new DataExportPipeline(
+
+            new EmailValidationStrategy(),
+
+            new HighValueCustomerFilterStrategy(1000.0),
+
+            new JSONExportStrategy(true)
+
+        );
+
+        
+
+        try {
+
+            String json = pipeline1.processAndExport(customers);
+
+            System.out.println(&quot;Exported JSON:\n&quot; + json);
+
+        } catch (RuntimeException e) {
+
+            System.err.println(&quot;Export failed: &quot; + e.getMessage());
+
+        }
+
+        
+
+        // Pipeline 2: All customers, anonymized, to CSV
+
+        List&lt;Customer&gt; validCustomers = customers.stream()
+
+            .filter(c -&gt; c.getEmail().contains(&quot;@&quot;))
+
+            .collect(Collectors.toList());
+
+        
+
+        DataExportPipeline pipeline2 = new DataExportPipeline(
+
+            new EmailValidationStrategy(),
+
+            new AnonymizationStrategy(),
+
+            new CSVExportStrategy(&quot;,&quot;)
+
+        );
+
+        
+
+        String csv = pipeline2.processAndExport(validCustomers);
+
+        System.out.println(&quot;Exported CSV:\n&quot; + csv);
+
+    }
+
+}
+
+</code></pre>
+<p><strong>Key Complexity Points:</strong></p>
+<ul>
+<li>✅ <strong>Multiple strategy types</strong> working together (validation, transform, export)</li>
+<li>✅ <strong>Pipeline pattern</strong> - strategies executed in sequence</li>
+<li>✅ <strong>Strategies maintain state</strong> (validation errors)</li>
+<li>✅ <strong>Error handling</strong> integrated into pipeline</li>
+<li>✅ <strong>Real transformation logic</strong> (filtering, anonymization)</li>
+</ul>
+<hr>
+<h2>Key Takeaways for Complex Scenarios:</h2>
+<p>1. <strong>Strategies can have state</strong> - configuration, dependencies, accumulated data</p>
+<p>2. <strong>Strategies can depend on external services</strong> - databases, APIs, other objects</p>
+<p>3. <strong>Strategy selection can be dynamic</strong> - based on runtime conditions</p>
+<p>4. <strong>Multiple strategies can work together</strong> - in pipelines or composition</p>
+<p>5. <strong>Context can be sophisticated</strong> - validation, metrics, error handling</p>
+<p>6. <strong>Strategies can have side effects</strong> - modifying external state</p>
+<p>Would you like me to show <strong>even more advanced scenarios</strong> like:</p>
+<ul>
+<li>Strategy patterns with caching/memoization</li>
+<li>Composite strategies (combining multiple strategies)</li>
+<li>Strategy pattern with async/concurrent operations</li>
+<li>Strategy pattern with database/persistence layer</li>
+</ul>
+<p>Or do you want to practice implementing one of these complex scenarios?</p>
+
+    </div>
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+</body>
+</html>

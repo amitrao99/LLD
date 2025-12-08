@@ -1,0 +1,3342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Singleton Pattern Guide</title>
+    <!-- Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text: #333;
+            --border: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            border-bottom: 3px solid var(--accent);
+            padding-bottom: 15px;
+            margin-top: 0;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: var(--secondary);
+            font-size: 1.8rem;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: var(--secondary);
+            font-size: 1.4rem;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        p {
+            margin-bottom: 16px;
+        }
+
+        ul {
+            margin-bottom: 16px;
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        strong {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        code {
+            font-family: 'Fira Code', Consolas, Monaco, 'Andale Mono', monospace;
+            background-color: #f4f4f4;
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: #e01e5a;
+            font-size: 0.9em;
+        }
+
+        pre {
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 0.95em;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table thead tr {
+            background-color: var(--primary);
+            color: #ffffff;
+            text-align: left;
+        }
+
+        table th, table td {
+            padding: 12px 15px;
+        }
+
+        table tbody tr {
+            border-bottom: 1px solid #dddddd;
+        }
+
+        table tbody tr:nth-of-type(even) {
+            background-color: #f9f9f9;
+        }
+
+        table tbody tr:last-of-type {
+            border-bottom: 2px solid var(--primary);
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: #ddd;
+            margin: 40px 0;
+        }
+        
+        blockquote {
+            border-left: 4px solid var(--accent);
+            margin: 20px 0;
+            padding: 10px 20px;
+            background-color: #f9f9f9;
+            color: #555;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+<p>Perfect! Let's tackle the Builder pattern with the same thorough approach we used for Singleton.</p>
+<hr>
+<h2>1. What is the Builder Pattern?</h2>
+<p><strong>Key characteristics:</strong></p>
+<ul>
+<li>Constructs complex objects step-by-step</li>
+<li>Provides fluent/chainable API</li>
+<li>Separates construction logic from business logic</li>
+<li>Immutable objects (typically)</li>
+</ul>
+<hr>
+<h2>2. Use Cases - Why Do We Use It?</h2>
+<h3><strong>Problem 1: Telescoping Constructor Anti-Pattern</strong></h3>
+<p><strong>Without Builder (THE NIGHTMARE):</strong></p>
+<pre><code class="language-java">
+public class User {
+
+    public User(String name) { ... }
+
+    public User(String name, int age) { ... }
+
+    public User(String name, int age, String email) { ... }
+
+    public User(String name, int age, String email, String phone) { ... }
+
+    public User(String name, int age, String email, String phone, String address) { ... }
+
+    public User(String name, int age, String email, String phone, String address, String city) { ... }
+
+    // 😱 20+ constructors!!!
+
+}
+
+
+
+// Using it:
+
+User user = new User(&quot;John&quot;, 30, &quot;john@example.com&quot;, null, null, &quot;NYC&quot;);
+
+                    // What are those nulls? Which parameter is which? 😵
+
+</code></pre>
+<p><strong>Problems:</strong></p>
+<ul>
+<li>❌ Too many constructors</li>
+<li>❌ Hard to read: <code>new User("John", 30, null, null, "NYC")</code> - what is what?</li>
+<li>❌ Parameter order mistakes</li>
+<li>❌ Can't have optional parameters easily</li>
+</ul>
+<h3><strong>Problem 2: JavaBeans Pattern Issues</strong></h3>
+<p><strong>JavaBeans approach:</strong></p>
+<pre><code class="language-java">
+User user = new User();
+
+user.setName(&quot;John&quot;);
+
+user.setAge(30);
+
+user.setEmail(&quot;john@example.com&quot;);
+
+// Object is MUTABLE and in INCONSISTENT state between calls
+
+// What if you forget to call setName()? Invalid object!
+
+</code></pre>
+<p><strong>Problems:</strong></p>
+<ul>
+<li>❌ Object in inconsistent state during construction</li>
+<li>❌ Not thread-safe</li>
+<li>❌ Can't create immutable objects</li>
+<li>❌ Can't enforce required fields</li>
+</ul>
+<h3><strong>Solution: Builder Pattern</strong> ✅</h3>
+<pre><code class="language-java">
+User user = User.builder()
+
+    .name(&quot;John&quot;)
+
+    .age(30)
+
+    .email(&quot;john@example.com&quot;)
+
+    .city(&quot;NYC&quot;)
+
+    .build();
+
+</code></pre>
+<p><strong>Benefits:</strong></p>
+<ul>
+<li>✅ Readable and clear</li>
+<li>✅ Immutable objects</li>
+<li>✅ Can enforce required fields</li>
+<li>✅ Optional parameters are easy</li>
+<li>✅ Fluent API (method chaining)</li>
+<li>✅ Thread-safe construction</li>
+</ul>
+<hr>
+<h3><strong>When to Use Builder Pattern:</strong></h3>
+<p><strong>Use Builder when your class has:</strong></p>
+<p>1. <strong>4+ parameters</strong> (especially if some are optional)</p>
+<p>2. <strong>Many optional parameters</strong></p>
+<p>3. <strong>Need for immutability</strong></p>
+<p>4. <strong>Complex object construction logic</strong></p>
+<p>5. <strong>Multiple representations</strong> of the same data</p>
+<p><strong>Real-world examples:</strong></p>
+<ul>
+<li><strong>HTTP Request builders</strong> - <code>HttpRequest.newBuilder().uri(...).header(...).POST(...).build()</code></li>
+<li><strong>Query builders</strong> - SQL, MongoDB queries</li>
+<li><strong>Configuration objects</strong> - App settings, connection configs</li>
+<li><strong>DTOs/POJOs</strong> - User profiles, product details, orders</li>
+<li><strong>Test data builders</strong> - Creating mock objects for tests</li>
+<li><strong>Document builders</strong> - PDFs, reports, emails</li>
+</ul>
+<hr>
+<h2>3. Different Ways to Implement Builder Pattern</h2>
+<p>Let me show you the main approaches:</p>
+<hr>
+<h2><strong>Approach 1: Classic Builder (Separate Builder Class)</strong></h2>
+<pre><code class="language-java">
+public class User {
+
+    // Final fields - immutable
+
+    private final String name;      // Required
+
+    private final int age;          // Required
+
+    private final String email;     // Optional
+
+    private final String phone;     // Optional
+
+    private final String address;   // Optional
+
+    
+
+    // Private constructor - can only be called by Builder
+
+    private User(UserBuilder builder) {
+
+        this.name = builder.name;
+
+        this.age = builder.age;
+
+        this.email = builder.email;
+
+        this.phone = builder.phone;
+
+        this.address = builder.address;
+
+    }
+
+    
+
+    // Getters only (no setters - immutable)
+
+    public String getName() { return name; }
+
+    public int getAge() { return age; }
+
+    public String getEmail() { return email; }
+
+    public String getPhone() { return phone; }
+
+    public String getAddress() { return address; }
+
+    
+
+    // Static method to get builder
+
+    public static UserBuilder builder() {
+
+        return new UserBuilder();
+
+    }
+
+    
+
+    // Separate Builder class
+
+    public static class UserBuilder {
+
+        // Non-final fields in builder (mutable during construction)
+
+        private String name;
+
+        private int age;
+
+        private String email;
+
+        private String phone;
+
+        private String address;
+
+        
+
+        // Private constructor
+
+        private UserBuilder() {}
+
+        
+
+        // Fluent setter methods (return &#x27;this&#x27; for chaining)
+
+        public UserBuilder name(String name) {
+
+            this.name = name;
+
+            return this;
+
+        }
+
+        
+
+        public UserBuilder age(int age) {
+
+            this.age = age;
+
+            return this;
+
+        }
+
+        
+
+        public UserBuilder email(String email) {
+
+            this.email = email;
+
+            return this;
+
+        }
+
+        
+
+        public UserBuilder phone(String phone) {
+
+            this.phone = phone;
+
+            return this;
+
+        }
+
+        
+
+        public UserBuilder address(String address) {
+
+            this.address = address;
+
+            return this;
+
+        }
+
+        
+
+        // Build method - validates and creates User
+
+        public User build() {
+
+            // Validation
+
+            if (name == null || name.isEmpty()) {
+
+                throw new IllegalStateException(&quot;Name is required&quot;);
+
+            }
+
+            if (age &lt; 0 || age &gt; 150) {
+
+                throw new IllegalStateException(&quot;Invalid age&quot;);
+
+            }
+
+            
+
+            return new User(this);
+
+        }
+
+    }
+
+}
+
+
+
+// Usage:
+
+User user = User.builder()
+
+    .name(&quot;John Doe&quot;)
+
+    .age(30)
+
+    .email(&quot;john@example.com&quot;)
+
+    .phone(&quot;123-456-7890&quot;)
+
+    .build();
+
+</code></pre>
+<p><strong>Pros:</strong></p>
+<ul>
+<li>Clear separation between object and builder</li>
+<li>Immutable final object</li>
+<li>Easy to add validation</li>
+<li>Clean and professional</li>
+</ul>
+<p><strong>Cons:</strong></p>
+<ul>
+<li>More verbose</li>
+<li>Duplicate field declarations</li>
+</ul>
+<hr>
+<h2><strong>Approach 2: Inner Static Builder (Most Common)</strong> ⭐</h2>
+<pre><code class="language-java">
+public class Pizza {
+
+    // Final fields
+
+    private final String size;          // Required
+
+    private final String crust;         // Required
+
+    private final String cheese;        // Required
+
+    private final boolean pepperoni;    // Optional
+
+    private final boolean mushrooms;    // Optional
+
+    private final boolean olives;       // Optional
+
+    
+
+    // Private constructor
+
+    private Pizza(Builder builder) {
+
+        this.size = builder.size;
+
+        this.crust = builder.crust;
+
+        this.cheese = builder.cheese;
+
+        this.pepperoni = builder.pepperoni;
+
+        this.mushrooms = builder.mushrooms;
+
+        this.olives = builder.olives;
+
+    }
+
+    
+
+    // Getters
+
+    public String getSize() { return size; }
+
+    public String getCrust() { return crust; }
+
+    public String getCheese() { return cheese; }
+
+    public boolean hasPepperoni() { return pepperoni; }
+
+    public boolean hasMushrooms() { return mushrooms; }
+
+    public boolean hasOlives() { return olives; }
+
+    
+
+    // Static method to get builder
+
+    public static Builder builder() {
+
+        return new Builder();
+
+    }
+
+    
+
+    // Inner static Builder class
+
+    public static class Builder {
+
+        // Required parameters
+
+        private String size;
+
+        private String crust;
+
+        private String cheese;
+
+        
+
+        // Optional parameters with defaults
+
+        private boolean pepperoni = false;
+
+        private boolean mushrooms = false;
+
+        private boolean olives = false;
+
+        
+
+        public Builder size(String size) {
+
+            this.size = size;
+
+            return this;
+
+        }
+
+        
+
+        public Builder crust(String crust) {
+
+            this.crust = crust;
+
+            return this;
+
+        }
+
+        
+
+        public Builder cheese(String cheese) {
+
+            this.cheese = cheese;
+
+            return this;
+
+        }
+
+        
+
+        public Builder pepperoni() {
+
+            this.pepperoni = true;
+
+            return this;
+
+        }
+
+        
+
+        public Builder mushrooms() {
+
+            this.mushrooms = true;
+
+            return this;
+
+        }
+
+        
+
+        public Builder olives() {
+
+            this.olives = true;
+
+            return this;
+
+        }
+
+        
+
+        public Pizza build() {
+
+            // Validate required fields
+
+            if (size == null) throw new IllegalStateException(&quot;Size is required&quot;);
+
+            if (crust == null) throw new IllegalStateException(&quot;Crust is required&quot;);
+
+            if (cheese == null) throw new IllegalStateException(&quot;Cheese is required&quot;);
+
+            
+
+            return new Pizza(this);
+
+        }
+
+    }
+
+    
+
+    @Override
+
+    public String toString() {
+
+        return String.format(&quot;Pizza[size=%s, crust=%s, cheese=%s, pepperoni=%s, mushrooms=%s, olives=%s]&quot;,
+
+            size, crust, cheese, pepperoni, mushrooms, olives);
+
+    }
+
+}
+
+
+
+// Usage:
+
+Pizza pizza = Pizza.builder()
+
+    .size(&quot;Large&quot;)
+
+    .crust(&quot;Thin&quot;)
+
+    .cheese(&quot;Mozzarella&quot;)
+
+    .pepperoni()
+
+    .mushrooms()
+
+    .build();
+
+</code></pre>
+<p><strong>Pros:</strong></p>
+<ul>
+<li>Everything in one file</li>
+<li>Most popular approach</li>
+<li>Clean and maintainable</li>
+</ul>
+<p><strong>Cons:</strong></p>
+<ul>
+<li>Still some duplication</li>
+</ul>
+<hr>
+<h2><strong>Approach 3: Lombok @Builder</strong> ⚡</h2>
+<pre><code class="language-java">
+import lombok.Builder;
+
+import lombok.Getter;
+
+import lombok.ToString;
+
+
+
+@Getter
+
+@Builder
+
+@ToString
+
+public class Product {
+
+    private final String name;
+
+    private final double price;
+
+    private final String category;
+
+    private final String description;
+
+    private final int stock;
+
+    private final String imageUrl;
+
+}
+
+
+
+// Usage - Lombok generates all the builder code!
+
+Product product = Product.builder()
+
+    .name(&quot;Laptop&quot;)
+
+    .price(999.99)
+
+    .category(&quot;Electronics&quot;)
+
+    .description(&quot;High-performance laptop&quot;)
+
+    .stock(50)
+
+    .imageUrl(&quot;http://example.com/laptop.jpg&quot;)
+
+    .build();
+
+</code></pre>
+<p><strong>Pros:</strong></p>
+<ul>
+<li>✅ Extremely concise - just one annotation</li>
+<li>✅ No boilerplate code</li>
+<li>✅ Automatic generation</li>
+</ul>
+<p><strong>Cons:</strong></p>
+<ul>
+<li>❌ Requires Lombok dependency</li>
+<li>❌ Less control over validation</li>
+<li>❌ Magic (generated code not visible)</li>
+</ul>
+<hr>
+<h2><strong>Approach 4: Step Builder (Enforcing Required Parameters)</strong> 🔒</h2>
+<pre><code class="language-java">
+// This ensures you MUST set required fields in order
+
+public class DatabaseConfig {
+
+    private final String host;
+
+    private final int port;
+
+    private final String database;
+
+    private final String username;
+
+    private final String password;
+
+    private final int maxConnections;
+
+    
+
+    private DatabaseConfig(Builder builder) {
+
+        this.host = builder.host;
+
+        this.port = builder.port;
+
+        this.database = builder.database;
+
+        this.username = builder.username;
+
+        this.password = builder.password;
+
+        this.maxConnections = builder.maxConnections;
+
+    }
+
+    
+
+    // Step interfaces
+
+    public interface HostStep {
+
+        PortStep host(String host);
+
+    }
+
+    
+
+    public interface PortStep {
+
+        DatabaseStep port(int port);
+
+    }
+
+    
+
+    public interface DatabaseStep {
+
+        UsernameStep database(String database);
+
+    }
+
+    
+
+    public interface UsernameStep {
+
+        PasswordStep username(String username);
+
+    }
+
+    
+
+    public interface PasswordStep {
+
+        BuildStep password(String password);
+
+    }
+
+    
+
+    public interface BuildStep {
+
+        BuildStep maxConnections(int maxConnections);  // Optional
+
+        DatabaseConfig build();
+
+    }
+
+    
+
+    // Builder implements all steps
+
+    public static class Builder implements HostStep, PortStep, DatabaseStep, 
+
+                                           UsernameStep, PasswordStep, BuildStep {
+
+        private String host;
+
+        private int port;
+
+        private String database;
+
+        private String username;
+
+        private String password;
+
+        private int maxConnections = 10;  // Default
+
+        
+
+        private Builder() {}
+
+        
+
+        @Override
+
+        public PortStep host(String host) {
+
+            this.host = host;
+
+            return this;
+
+        }
+
+        
+
+        @Override
+
+        public DatabaseStep port(int port) {
+
+            this.port = port;
+
+            return this;
+
+        }
+
+        
+
+        @Override
+
+        public UsernameStep database(String database) {
+
+            this.database = database;
+
+            return this;
+
+        }
+
+        
+
+        @Override
+
+        public PasswordStep username(String username) {
+
+            this.username = username;
+
+            return this;
+
+        }
+
+        
+
+        @Override
+
+        public BuildStep password(String password) {
+
+            this.password = password;
+
+            return this;
+
+        }
+
+        
+
+        @Override
+
+        public BuildStep maxConnections(int maxConnections) {
+
+            this.maxConnections = maxConnections;
+
+            return this;
+
+        }
+
+        
+
+        @Override
+
+        public DatabaseConfig build() {
+
+            return new DatabaseConfig(this);
+
+        }
+
+    }
+
+    
+
+    public static HostStep builder() {
+
+        return new Builder();
+
+    }
+
+}
+
+
+
+// Usage - IDE auto-completion guides you through required steps!
+
+DatabaseConfig config = DatabaseConfig.builder()
+
+    .host(&quot;localhost&quot;)        // Must be first
+
+    .port(3306)              // Must be second
+
+    .database(&quot;mydb&quot;)        // Must be third
+
+    .username(&quot;root&quot;)        // Must be fourth
+
+    .password(&quot;password&quot;)    // Must be fifth
+
+    .maxConnections(20)      // Optional
+
+    .build();
+
+</code></pre>
+<p><strong>Pros:</strong></p>
+<ul>
+<li>✅ Compile-time enforcement of required fields</li>
+<li>✅ IDE guides you through steps</li>
+<li>✅ Impossible to forget required fields</li>
+</ul>
+<p><strong>Cons:</strong></p>
+<ul>
+<li>❌ Very verbose</li>
+<li>❌ Complex to implement</li>
+<li>❌ Overkill for most cases</li>
+</ul>
+<hr>
+<h2><strong>Approach 5: Method Chaining without Builder Class</strong></h2>
+<pre><code class="language-java">
+// Sometimes called &quot;Fluent API&quot; but NOT true Builder pattern
+
+public class EmailMessage {
+
+    private String to;
+
+    private String subject;
+
+    private String body;
+
+    
+
+    public EmailMessage to(String to) {
+
+        this.to = to;
+
+        return this;
+
+    }
+
+    
+
+    public EmailMessage subject(String subject) {
+
+        this.subject = subject;
+
+        return this;
+
+    }
+
+    
+
+    public EmailMessage body(String body) {
+
+        this.body = body;
+
+        return this;
+
+    }
+
+    
+
+    public void send() {
+
+        System.out.println(&quot;Sending email to: &quot; + to);
+
+    }
+
+}
+
+
+
+// Usage:
+
+new EmailMessage()
+
+    .to(&quot;john@example.com&quot;)
+
+    .subject(&quot;Hello&quot;)
+
+    .body(&quot;How are you?&quot;)
+
+    .send();
+
+</code></pre>
+<p><strong>Pros:</strong></p>
+<ul>
+<li>Simple</li>
+<li>Less code</li>
+</ul>
+<p><strong>Cons:</strong></p>
+<ul>
+<li>❌ Object is MUTABLE (not immutable)</li>
+<li>❌ No separation of construction and representation</li>
+<li>❌ Not a true Builder pattern</li>
+</ul>
+<hr>
+<h2><strong>Quick Comparison Table</strong></h2>
+<table><thead><tr><th>Approach</th><th>Immutability</th><th>Validation</th><th>Complexity</th><th>Use When</th></tr></thead><tbody><tr><td>Classic Builder</td><td>✅</td><td>✅</td><td>Medium</td><td>Professional projects</td></tr><tr><td>Inner Static Builder</td><td>✅</td><td>✅</td><td>Medium</td><td><strong>Most common - recommended</strong> ⭐</td></tr><tr><td>Lombok</td><td>✅</td><td>⚠️ Limited</td><td>Low</td><td>Rapid development</td></tr><tr><td>Step Builder</td><td>✅</td><td>✅✅</td><td>High</td><td>Critical configs, APIs</td></tr><tr><td>Fluent API</td><td>❌</td><td>✅</td><td>Low</td><td>Simple cases only</td></tr></tbody></table>
+<hr>
+<h1>🎯 <strong>My Recommendation: Inner Static Builder Pattern</strong></h1>
+<p>This is the pattern you should <strong>master and use 90% of the time</strong> - it's the industry standard.</p>
+<hr>
+<h2><strong>Why Inner Static Builder?</strong></h2>
+<p>1. ✅ <strong>Most widely used</strong> in professional code (Spring, Hibernate, etc.)</p>
+<p>2. ✅ <strong>Immutable objects</strong> by default</p>
+<p>3. ✅ <strong>Easy validation</strong> in build() method</p>
+<p>4. ✅ <strong>Clean and readable</strong> - everything in one file</p>
+<p>5. ✅ <strong>No external dependencies</strong> (unlike Lombok)</p>
+<p>6. ✅ <strong>Handles complex objects</strong> perfectly (which we'll cover!)</p>
+<hr>
+<h2><strong>Handling Complex Objects in Builder</strong></h2>
+<p>You're absolutely right - real builders don't just use primitives! Let me show you the different strategies:</p>
+<h3><strong>Strategy 1: Pass Complex Objects Directly</strong></h3>
+<pre><code class="language-java">
+public class Address {
+
+    private final String street;
+
+    private final String city;
+
+    private final String state;
+
+    private final String zipCode;
+
+    
+
+    public Address(String street, String city, String state, String zipCode) {
+
+        this.street = street;
+
+        this.city = city;
+
+        this.state = state;
+
+        this.zipCode = zipCode;
+
+    }
+
+    
+
+    // Getters...
+
+}
+
+
+
+public class Employee {
+
+    private final String name;
+
+    private final String email;
+
+    private final Address address;  // ← Complex object!
+
+    private final List&lt;String&gt; skills;  // ← Collection!
+
+    
+
+    private Employee(Builder builder) {
+
+        this.name = builder.name;
+
+        this.email = builder.email;
+
+        this.address = builder.address;
+
+        this.skills = builder.skills;
+
+    }
+
+    
+
+    public static class Builder {
+
+        private String name;
+
+        private String email;
+
+        private Address address;
+
+        private List&lt;String&gt; skills = new ArrayList&lt;&gt;();
+
+        
+
+        public Builder name(String name) {
+
+            this.name = name;
+
+            return this;
+
+        }
+
+        
+
+        public Builder email(String email) {
+
+            this.email = email;
+
+            return this;
+
+        }
+
+        
+
+        // Accept the complex object directly
+
+        public Builder address(Address address) {
+
+            this.address = address;
+
+            return this;
+
+        }
+
+        
+
+        // Add individual skills
+
+        public Builder skill(String skill) {
+
+            this.skills.add(skill);
+
+            return this;
+
+        }
+
+        
+
+        // Or add multiple skills at once
+
+        public Builder skills(List&lt;String&gt; skills) {
+
+            this.skills.addAll(skills);
+
+            return this;
+
+        }
+
+        
+
+        public Employee build() {
+
+            if (name == null) throw new IllegalStateException(&quot;Name required&quot;);
+
+            if (email == null) throw new IllegalStateException(&quot;Email required&quot;);
+
+            return new Employee(this);
+
+        }
+
+    }
+
+    
+
+    public static Builder builder() {
+
+        return new Builder();
+
+    }
+
+}
+
+
+
+// Usage:
+
+Address address = new Address(&quot;123 Main St&quot;, &quot;New York&quot;, &quot;NY&quot;, &quot;10001&quot;);
+
+
+
+Employee emp = Employee.builder()
+
+    .name(&quot;John Doe&quot;)
+
+    .email(&quot;john@example.com&quot;)
+
+    .address(address)  // Pass complex object
+
+    .skill(&quot;Java&quot;)
+
+    .skill(&quot;Python&quot;)
+
+    .build();
+
+</code></pre>
+<hr>
+<h3><strong>Strategy 2: Builder Composition (Nested Builders)</strong> ⭐</h3>
+<p>This is the <strong>elegant approach</strong> - use a builder within a builder!</p>
+<pre><code class="language-java">
+public class Address {
+
+    private final String street;
+
+    private final String city;
+
+    private final String state;
+
+    private final String zipCode;
+
+    
+
+    private Address(Builder builder) {
+
+        this.street = builder.street;
+
+        this.city = builder.city;
+
+        this.state = builder.state;
+
+        this.zipCode = builder.zipCode;
+
+    }
+
+    
+
+    public static class Builder {
+
+        private String street;
+
+        private String city;
+
+        private String state;
+
+        private String zipCode;
+
+        
+
+        public Builder street(String street) {
+
+            this.street = street;
+
+            return this;
+
+        }
+
+        
+
+        public Builder city(String city) {
+
+            this.city = city;
+
+            return this;
+
+        }
+
+        
+
+        public Builder state(String state) {
+
+            this.state = state;
+
+            return this;
+
+        }
+
+        
+
+        public Builder zipCode(String zipCode) {
+
+            this.zipCode = zipCode;
+
+            return this;
+
+        }
+
+        
+
+        public Address build() {
+
+            return new Address(this);
+
+        }
+
+    }
+
+    
+
+    public static Builder builder() {
+
+        return new Builder();
+
+    }
+
+    
+
+    // Getters...
+
+    public String getStreet() { return street; }
+
+    public String getCity() { return city; }
+
+    public String getState() { return state; }
+
+    public String getZipCode() { return zipCode; }
+
+}
+
+
+
+public class Employee {
+
+    private final String name;
+
+    private final String email;
+
+    private final Address address;
+
+    
+
+    private Employee(Builder builder) {
+
+        this.name = builder.name;
+
+        this.email = builder.email;
+
+        this.address = builder.address;
+
+    }
+
+    
+
+    public static class Builder {
+
+        private String name;
+
+        private String email;
+
+        private Address address;
+
+        
+
+        public Builder name(String name) {
+
+            this.name = name;
+
+            return this;
+
+        }
+
+        
+
+        public Builder email(String email) {
+
+            this.email = email;
+
+            return this;
+
+        }
+
+        
+
+        // Option 1: Accept pre-built Address
+
+        public Builder address(Address address) {
+
+            this.address = address;
+
+            return this;
+
+        }
+
+        
+
+        // Option 2: Accept Address.Builder (more flexible!)
+
+        public Builder address(Address.Builder addressBuilder) {
+
+            this.address = addressBuilder.build();
+
+            return this;
+
+        }
+
+        
+
+        public Employee build() {
+
+            return new Employee(this);
+
+        }
+
+    }
+
+    
+
+    public static Builder builder() {
+
+        return new Builder();
+
+    }
+
+}
+
+
+
+// Usage - Beautiful nested building!
+
+Employee emp = Employee.builder()
+
+    .name(&quot;John Doe&quot;)
+
+    .email(&quot;john@example.com&quot;)
+
+    .address(Address.builder()  // ← Nested builder!
+
+        .street(&quot;123 Main St&quot;)
+
+        .city(&quot;New York&quot;)
+
+        .state(&quot;NY&quot;)
+
+        .zipCode(&quot;10001&quot;))  // Returns Address.Builder, gets auto-built
+
+    .build();
+
+</code></pre>
+<hr>
+<h3><strong>Strategy 3: Consumer Pattern (Java 8+)</strong> 🔥</h3>
+<p>This is the <strong>most elegant modern approach</strong>:</p>
+<pre><code class="language-java">
+public class Employee {
+
+    private final String name;
+
+    private final String email;
+
+    private final Address address;
+
+    
+
+    private Employee(Builder builder) {
+
+        this.name = builder.name;
+
+        this.email = builder.email;
+
+        this.address = builder.address;
+
+    }
+
+    
+
+    public static class Builder {
+
+        private String name;
+
+        private String email;
+
+        private Address address;
+
+        
+
+        public Builder name(String name) {
+
+            this.name = name;
+
+            return this;
+
+        }
+
+        
+
+        public Builder email(String email) {
+
+            this.email = email;
+
+            return this;
+
+        }
+
+        
+
+        // Accept a Consumer that configures the Address.Builder!
+
+        public Builder address(Consumer&lt;Address.Builder&gt; addressConfig) {
+
+            Address.Builder addressBuilder = Address.builder();
+
+            addressConfig.accept(addressBuilder);  // Configure it
+
+            this.address = addressBuilder.build();
+
+            return this;
+
+        }
+
+        
+
+        public Employee build() {
+
+            return new Employee(this);
+
+        }
+
+    }
+
+    
+
+    public static Builder builder() {
+
+        return new Builder();
+
+    }
+
+}
+
+
+
+// Usage - Lambda magic! ✨
+
+Employee emp = Employee.builder()
+
+    .name(&quot;John Doe&quot;)
+
+    .email(&quot;john@example.com&quot;)
+
+    .address(addr -&gt; addr  // ← Lambda configures nested builder
+
+        .street(&quot;123 Main St&quot;)
+
+        .city(&quot;New York&quot;)
+
+        .state(&quot;NY&quot;)
+
+        .zipCode(&quot;10001&quot;))
+
+    .build();
+
+</code></pre>
+<hr>
+<h2><strong>Full-Fledged Real-World Example: E-Commerce Order System</strong></h2>
+<p>Let me show you a <strong>complete implementation</strong> with multiple complex objects, collections, and all the techniques:</p>
+<h3><strong>1. Product.java</strong></h3>
+<pre><code class="language-java">
+public class Product {
+
+    private final String id;
+
+    private final String name;
+
+    private final double price;
+
+    private final String category;
+
+    
+
+    private Product(Builder builder) {
+
+        this.id = builder.id;
+
+        this.name = builder.name;
+
+        this.price = builder.price;
+
+        this.category = builder.category;
+
+    }
+
+    
+
+    public static class Builder {
+
+        private String id;
+
+        private String name;
+
+        private double price;
+
+        private String category;
+
+        
+
+        public Builder id(String id) {
+
+            this.id = id;
+
+            return this;
+
+        }
+
+        
+
+        public Builder name(String name) {
+
+            this.name = name;
+
+            return this;
+
+        }
+
+        
+
+        public Builder price(double price) {
+
+            this.price = price;
+
+            return this;
+
+        }
+
+        
+
+        public Builder category(String category) {
+
+            this.category = category;
+
+            return this;
+
+        }
+
+        
+
+        public Product build() {
+
+            if (id == null) throw new IllegalStateException(&quot;Product ID required&quot;);
+
+            if (name == null) throw new IllegalStateException(&quot;Product name required&quot;);
+
+            if (price &lt;= 0) throw new IllegalStateException(&quot;Price must be positive&quot;);
+
+            return new Product(this);
+
+        }
+
+    }
+
+    
+
+    public static Builder builder() {
+
+        return new Builder();
+
+    }
+
+    
+
+    // Getters
+
+    public String getId() { return id; }
+
+    public String getName() { return name; }
+
+    public double getPrice() { return price; }
+
+    public String getCategory() { return category; }
+
+    
+
+    @Override
+
+    public String toString() {
+
+        return String.format(&quot;Product[id=%s, name=%s, price=%.2f, category=%s]&quot;, 
+
+            id, name, price, category);
+
+    }
+
+}
+
+</code></pre>
+<h3><strong>2. OrderItem.java</strong></h3>
+<pre><code class="language-java">
+public class OrderItem {
+
+    private final Product product;  // ← Complex object
+
+    private final int quantity;
+
+    private final double discount;
+
+    
+
+    private OrderItem(Builder builder) {
+
+        this.product = builder.product;
+
+        this.quantity = builder.quantity;
+
+        this.discount = builder.discount;
+
+    }
+
+    
+
+    public static class Builder {
+
+        private Product product;
+
+        private int quantity = 1;
+
+        private double discount = 0.0;
+
+        
+
+        // Accept Product directly
+
+        public Builder product(Product product) {
+
+            this.product = product;
+
+            return this;
+
+        }
+
+        
+
+        // OR accept Product.Builder
+
+        public Builder product(Product.Builder productBuilder) {
+
+            this.product = productBuilder.build();
+
+            return this;
+
+        }
+
+        
+
+        // OR use Consumer pattern
+
+        public Builder product(Consumer&lt;Product.Builder&gt; productConfig) {
+
+            Product.Builder productBuilder = Product.builder();
+
+            productConfig.accept(productBuilder);
+
+            this.product = productBuilder.build();
+
+            return this;
+
+        }
+
+        
+
+        public Builder quantity(int quantity) {
+
+            this.quantity = quantity;
+
+            return this;
+
+        }
+
+        
+
+        public Builder discount(double discount) {
+
+            this.discount = discount;
+
+            return this;
+
+        }
+
+        
+
+        public OrderItem build() {
+
+            if (product == null) throw new IllegalStateException(&quot;Product required&quot;);
+
+            if (quantity &lt;= 0) throw new IllegalStateException(&quot;Quantity must be positive&quot;);
+
+            return new OrderItem(this);
+
+        }
+
+    }
+
+    
+
+    public static Builder builder() {
+
+        return new Builder();
+
+    }
+
+    
+
+    public double getTotalPrice() {
+
+        return product.getPrice() * quantity * (1 - discount);
+
+    }
+
+    
+
+    // Getters
+
+    public Product getProduct() { return product; }
+
+    public int getQuantity() { return quantity; }
+
+    public double getDiscount() { return discount; }
+
+    
+
+    @Override
+
+    public String toString() {
+
+        return String.format(&quot;OrderItem[product=%s, quantity=%d, discount=%.2f%%, total=$%.2f]&quot;,
+
+            product.getName(), quantity, discount * 100, getTotalPrice());
+
+    }
+
+}
+
+</code></pre>
+<h3><strong>3. ShippingAddress.java</strong></h3>
+<pre><code class="language-java">
+public class ShippingAddress {
+
+    private final String recipientName;
+
+    private final String street;
+
+    private final String city;
+
+    private final String state;
+
+    private final String zipCode;
+
+    private final String country;
+
+    private final String phoneNumber;
+
+    
+
+    private ShippingAddress(Builder builder) {
+
+        this.recipientName = builder.recipientName;
+
+        this.street = builder.street;
+
+        this.city = builder.city;
+
+        this.state = builder.state;
+
+        this.zipCode = builder.zipCode;
+
+        this.country = builder.country;
+
+        this.phoneNumber = builder.phoneNumber;
+
+    }
+
+    
+
+    public static class Builder {
+
+        private String recipientName;
+
+        private String street;
+
+        private String city;
+
+        private String state;
+
+        private String zipCode;
+
+        private String country = &quot;USA&quot;;  // Default
+
+        private String phoneNumber;
+
+        
+
+        public Builder recipientName(String recipientName) {
+
+            this.recipientName = recipientName;
+
+            return this;
+
+        }
+
+        
+
+        public Builder street(String street) {
+
+            this.street = street;
+
+            return this;
+
+        }
+
+        
+
+        public Builder city(String city) {
+
+            this.city = city;
+
+            return this;
+
+        }
+
+        
+
+        public Builder state(String state) {
+
+            this.state = state;
+
+            return this;
+
+        }
+
+        
+
+        public Builder zipCode(String zipCode) {
+
+            this.zipCode = zipCode;
+
+            return this;
+
+        }
+
+        
+
+        public Builder country(String country) {
+
+            this.country = country;
+
+            return this;
+
+        }
+
+        
+
+        public Builder phoneNumber(String phoneNumber) {
+
+            this.phoneNumber = phoneNumber;
+
+            return this;
+
+        }
+
+        
+
+        public ShippingAddress build() {
+
+            if (recipientName == null) throw new IllegalStateException(&quot;Recipient name required&quot;);
+
+            if (street == null) throw new IllegalStateException(&quot;Street required&quot;);
+
+            if (city == null) throw new IllegalStateException(&quot;City required&quot;);
+
+            if (zipCode == null) throw new IllegalStateException(&quot;Zip code required&quot;);
+
+            return new ShippingAddress(this);
+
+        }
+
+    }
+
+    
+
+    public static Builder builder() {
+
+        return new Builder();
+
+    }
+
+    
+
+    // Getters
+
+    public String getRecipientName() { return recipientName; }
+
+    public String getStreet() { return street; }
+
+    public String getCity() { return city; }
+
+    public String getState() { return state; }
+
+    public String getZipCode() { return zipCode; }
+
+    public String getCountry() { return country; }
+
+    public String getPhoneNumber() { return phoneNumber; }
+
+    
+
+    @Override
+
+    public String toString() {
+
+        return String.format(&quot;%s\n%s\n%s, %s %s\n%s\nPhone: %s&quot;,
+
+            recipientName, street, city, state, zipCode, country, phoneNumber);
+
+    }
+
+}
+
+</code></pre>
+<h3><strong>4. PaymentInfo.java</strong></h3>
+<pre><code class="language-java">
+public class PaymentInfo {
+
+    private final String cardNumber;
+
+    private final String cardHolderName;
+
+    private final String expiryDate;
+
+    private final String cvv;
+
+    private final String billingAddress;
+
+    
+
+    private PaymentInfo(Builder builder) {
+
+        this.cardNumber = builder.cardNumber;
+
+        this.cardHolderName = builder.cardHolderName;
+
+        this.expiryDate = builder.expiryDate;
+
+        this.cvv = builder.cvv;
+
+        this.billingAddress = builder.billingAddress;
+
+    }
+
+    
+
+    public static class Builder {
+
+        private String cardNumber;
+
+        private String cardHolderName;
+
+        private String expiryDate;
+
+        private String cvv;
+
+        private String billingAddress;
+
+        
+
+        public Builder cardNumber(String cardNumber) {
+
+            this.cardNumber = cardNumber;
+
+            return this;
+
+        }
+
+        
+
+        public Builder cardHolderName(String cardHolderName) {
+
+            this.cardHolderName = cardHolderName;
+
+            return this;
+
+        }
+
+        
+
+        public Builder expiryDate(String expiryDate) {
+
+            this.expiryDate = expiryDate;
+
+            return this;
+
+        }
+
+        
+
+        public Builder cvv(String cvv) {
+
+            this.cvv = cvv;
+
+            return this;
+
+        }
+
+        
+
+        public Builder billingAddress(String billingAddress) {
+
+            this.billingAddress = billingAddress;
+
+            return this;
+
+        }
+
+        
+
+        public PaymentInfo build() {
+
+            if (cardNumber == null) throw new IllegalStateException(&quot;Card number required&quot;);
+
+            if (cardHolderName == null) throw new IllegalStateException(&quot;Cardholder name required&quot;);
+
+            // More validation...
+
+            return new PaymentInfo(this);
+
+        }
+
+    }
+
+    
+
+    public static Builder builder() {
+
+        return new Builder();
+
+    }
+
+    
+
+    // Getters (masked for security)
+
+    public String getMaskedCardNumber() {
+
+        return &quot;**** **** **** &quot; + cardNumber.substring(cardNumber.length() - 4);
+
+    }
+
+    
+
+    @Override
+
+    public String toString() {
+
+        return String.format(&quot;PaymentInfo[card=%s, holder=%s]&quot;,
+
+            getMaskedCardNumber(), cardHolderName);
+
+    }
+
+}
+
+</code></pre>
+<h3><strong>5. Order.java (The Master Builder)</strong> 🎯</h3>
+<pre><code class="language-java">
+import java.time.LocalDateTime;
+
+import java.util.ArrayList;
+
+import java.util.List;
+
+import java.util.function.Consumer;
+
+
+
+public class Order {
+
+    private final String orderId;
+
+    private final String customerId;
+
+    private final LocalDateTime orderDate;
+
+    private final List&lt;OrderItem&gt; items;  // ← Collection of complex objects
+
+    private final ShippingAddress shippingAddress;  // ← Complex object
+
+    private final PaymentInfo paymentInfo;  // ← Complex object
+
+    private final String notes;
+
+    private final boolean giftWrap;
+
+    private final String promoCode;
+
+    
+
+    private Order(Builder builder) {
+
+        this.orderId = builder.orderId;
+
+        this.customerId = builder.customerId;
+
+        this.orderDate = builder.orderDate;
+
+        this.items = new ArrayList&lt;&gt;(builder.items);  // Defensive copy
+
+        this.shippingAddress = builder.shippingAddress;
+
+        this.paymentInfo = builder.paymentInfo;
+
+        this.notes = builder.notes;
+
+        this.giftWrap = builder.giftWrap;
+
+        this.promoCode = builder.promoCode;
+
+    }
+
+    
+
+    public static class Builder {
+
+        // Required fields
+
+        private String orderId;
+
+        private String customerId;
+
+        private LocalDateTime orderDate = LocalDateTime.now();
+
+        
+
+        // Complex objects and collections
+
+        private List&lt;OrderItem&gt; items = new ArrayList&lt;&gt;();
+
+        private ShippingAddress shippingAddress;
+
+        private PaymentInfo paymentInfo;
+
+        
+
+        // Optional fields
+
+        private String notes;
+
+        private boolean giftWrap = false;
+
+        private String promoCode;
+
+        
+
+        public Builder orderId(String orderId) {
+
+            this.orderId = orderId;
+
+            return this;
+
+        }
+
+        
+
+        public Builder customerId(String customerId) {
+
+            this.customerId = customerId;
+
+            return this;
+
+        }
+
+        
+
+        public Builder orderDate(LocalDateTime orderDate) {
+
+            this.orderDate = orderDate;
+
+            return this;
+
+        }
+
+        
+
+        // ========== HANDLING COLLECTIONS ==========
+
+        
+
+        // Add single item (pre-built)
+
+        public Builder addItem(OrderItem item) {
+
+            this.items.add(item);
+
+            return this;
+
+        }
+
+        
+
+        // Add single item using builder
+
+        public Builder addItem(OrderItem.Builder itemBuilder) {
+
+            this.items.add(itemBuilder.build());
+
+            return this;
+
+        }
+
+        
+
+        // Add single item using Consumer pattern
+
+        public Builder addItem(Consumer&lt;OrderItem.Builder&gt; itemConfig) {
+
+            OrderItem.Builder itemBuilder = OrderItem.builder();
+
+            itemConfig.accept(itemBuilder);
+
+            this.items.add(itemBuilder.build());
+
+            return this;
+
+        }
+
+        
+
+        // Add multiple items at once
+
+        public Builder items(List&lt;OrderItem&gt; items) {
+
+            this.items.addAll(items);
+
+            return this;
+
+        }
+
+        
+
+        // ========== HANDLING COMPLEX OBJECTS ==========
+
+        
+
+        // Shipping Address - Option 1: Pre-built
+
+        public Builder shippingAddress(ShippingAddress address) {
+
+            this.shippingAddress = address;
+
+            return this;
+
+        }
+
+        
+
+        // Shipping Address - Option 2: Using builder
+
+        public Builder shippingAddress(ShippingAddress.Builder addressBuilder) {
+
+            this.shippingAddress = addressBuilder.build();
+
+            return this;
+
+        }
+
+        
+
+        // Shipping Address - Option 3: Consumer pattern (CLEANEST!)
+
+        public Builder shippingAddress(Consumer&lt;ShippingAddress.Builder&gt; addressConfig) {
+
+            ShippingAddress.Builder addressBuilder = ShippingAddress.builder();
+
+            addressConfig.accept(addressBuilder);
+
+            this.shippingAddress = addressBuilder.build();
+
+            return this;
+
+        }
+
+        
+
+        // Payment Info - Using all 3 approaches
+
+        public Builder paymentInfo(PaymentInfo paymentInfo) {
+
+            this.paymentInfo = paymentInfo;
+
+            return this;
+
+        }
+
+        
+
+        public Builder paymentInfo(PaymentInfo.Builder paymentBuilder) {
+
+            this.paymentInfo = paymentBuilder.build();
+
+            return this;
+
+        }
+
+        
+
+        public Builder paymentInfo(Consumer&lt;PaymentInfo.Builder&gt; paymentConfig) {
+
+            PaymentInfo.Builder paymentBuilder = PaymentInfo.builder();
+
+            paymentConfig.accept(paymentBuilder);
+
+            this.paymentInfo = paymentBuilder.build();
+
+            return this;
+
+        }
+
+        
+
+        // ========== SIMPLE FIELDS ==========
+
+        
+
+        public Builder notes(String notes) {
+
+            this.notes = notes;
+
+            return this;
+
+        }
+
+        
+
+        public Builder giftWrap(boolean giftWrap) {
+
+            this.giftWrap = giftWrap;
+
+            return this;
+
+        }
+
+        
+
+        public Builder giftWrap() {  // Convenient method
+
+            this.giftWrap = true;
+
+            return this;
+
+        }
+
+        
+
+        public Builder promoCode(String promoCode) {
+
+            this.promoCode = promoCode;
+
+            return this;
+
+        }
+
+        
+
+        // ========== BUILD WITH VALIDATION ==========
+
+        
+
+        public Order build() {
+
+            // Validate required fields
+
+            if (orderId == null || orderId.isEmpty()) {
+
+                throw new IllegalStateException(&quot;Order ID is required&quot;);
+
+            }
+
+            if (customerId == null || customerId.isEmpty()) {
+
+                throw new IllegalStateException(&quot;Customer ID is required&quot;);
+
+            }
+
+            if (items.isEmpty()) {
+
+                throw new IllegalStateException(&quot;Order must have at least one item&quot;);
+
+            }
+
+            if (shippingAddress == null) {
+
+                throw new IllegalStateException(&quot;Shipping address is required&quot;);
+
+            }
+
+            if (paymentInfo == null) {
+
+                throw new IllegalStateException(&quot;Payment info is required&quot;);
+
+            }
+
+            
+
+            // Business logic validation
+
+            double totalAmount = getTotalAmount();
+
+            if (totalAmount &lt; 0) {
+
+                throw new IllegalStateException(&quot;Total amount cannot be negative&quot;);
+
+            }
+
+            
+
+            return new Order(this);
+
+        }
+
+        
+
+        // Helper method for validation
+
+        private double getTotalAmount() {
+
+            return items.stream()
+
+                .mapToDouble(OrderItem::getTotalPrice)
+
+                .sum();
+
+        }
+
+    }
+
+    
+
+    public static Builder builder() {
+
+        return new Builder();
+
+    }
+
+    
+
+    // ========== BUSINESS METHODS ==========
+
+    
+
+    public double getSubtotal() {
+
+        return items.stream()
+
+            .mapToDouble(OrderItem::getTotalPrice)
+
+            .sum();
+
+    }
+
+    
+
+    public double getTax() {
+
+        return getSubtotal() * 0.08;  // 8% tax
+
+    }
+
+    
+
+    public double getShippingCost() {
+
+        return giftWrap ? 15.0 : 10.0;
+
+    }
+
+    
+
+    public double getTotal() {
+
+        double total = getSubtotal() + getTax() + getShippingCost();
+
+        
+
+        // Apply promo code discount
+
+        if (&quot;SAVE10&quot;.equals(promoCode)) {
+
+            total *= 0.9;  // 10% off
+
+        }
+
+        
+
+        return total;
+
+    }
+
+    
+
+    // Getters
+
+    public String getOrderId() { return orderId; }
+
+    public String getCustomerId() { return customerId; }
+
+    public LocalDateTime getOrderDate() { return orderDate; }
+
+    public List&lt;OrderItem&gt; getItems() { return new ArrayList&lt;&gt;(items); }  // Defensive copy
+
+    public ShippingAddress getShippingAddress() { return shippingAddress; }
+
+    public PaymentInfo getPaymentInfo() { return paymentInfo; }
+
+    public String getNotes() { return notes; }
+
+    public boolean isGiftWrap() { return giftWrap; }
+
+    public String getPromoCode() { return promoCode; }
+
+    
+
+    @Override
+
+    public String toString() {
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(&quot;=&quot;.repeat(60)).append(&quot;\n&quot;);
+
+        sb.append(&quot;ORDER #&quot;).append(orderId).append(&quot;\n&quot;);
+
+        sb.append(&quot;=&quot;.repeat(60)).append(&quot;\n&quot;);
+
+        sb.append(&quot;Customer ID: &quot;).append(customerId).append(&quot;\n&quot;);
+
+        sb.append(&quot;Order Date: &quot;).append(orderDate).append(&quot;\n&quot;);
+
+        sb.append(&quot;\nITEMS:\n&quot;);
+
+        sb.append(&quot;-&quot;.repeat(60)).append(&quot;\n&quot;);
+
+        for (OrderItem item : items) {
+
+            sb.append(item).append(&quot;\n&quot;);
+
+        }
+
+        sb.append(&quot;-&quot;.repeat(60)).append(&quot;\n&quot;);
+
+        sb.append(String.format(&quot;Subtotal: $%.2f\n&quot;, getSubtotal()));
+
+        sb.append(String.format(&quot;Tax: $%.2f\n&quot;, getTax()));
+
+        sb.append(String.format(&quot;Shipping: $%.2f%s\n&quot;, getShippingCost(), giftWrap ? &quot; (Gift Wrap)&quot; : &quot;&quot;));
+
+        if (promoCode != null) {
+
+            sb.append(&quot;Promo Code: &quot;).append(promoCode).append(&quot; applied\n&quot;);
+
+        }
+
+        sb.append(String.format(&quot;TOTAL: $%.2f\n&quot;, getTotal()));
+
+        sb.append(&quot;\nSHIPPING TO:\n&quot;);
+
+        sb.append(shippingAddress).append(&quot;\n&quot;);
+
+        sb.append(&quot;\nPAYMENT:\n&quot;);
+
+        sb.append(paymentInfo).append(&quot;\n&quot;);
+
+        if (notes != null) {
+
+            sb.append(&quot;\nNOTES: &quot;).append(notes).append(&quot;\n&quot;);
+
+        }
+
+        sb.append(&quot;=&quot;.repeat(60)).append(&quot;\n&quot;);
+
+        return sb.toString();
+
+    }
+
+}
+
+</code></pre>
+<hr>
+<h2><strong>Complete Demo Application</strong></h2>
+<pre><code class="language-java">
+import java.util.function.Consumer;
+
+
+
+public class BuilderPatternDemo {
+
+    
+
+    public static void main(String[] args) {
+
+        
+
+        System.out.println(&quot;🛒 E-COMMERCE ORDER BUILDER DEMO\n&quot;);
+
+        
+
+        // ========== EXAMPLE 1: Using Pre-Built Objects ==========
+
+        System.out.println(&quot;===== EXAMPLE 1: Pre-Built Objects Approach =====\n&quot;);
+
+        
+
+        Product laptop = Product.builder()
+
+            .id(&quot;PROD-001&quot;)
+
+            .name(&quot;MacBook Pro&quot;)
+
+            .price(2499.99)
+
+            .category(&quot;Electronics&quot;)
+
+            .build();
+
+        
+
+        Product mouse = Product.builder()
+
+            .id(&quot;PROD-002&quot;)
+
+            .name(&quot;Magic Mouse&quot;)
+
+            .price(79.99)
+
+            .category(&quot;Accessories&quot;)
+
+            .build();
+
+        
+
+        OrderItem item1 = OrderItem.builder()
+
+            .product(laptop)
+
+            .quantity(1)
+
+            .discount(0.05)  // 5% discount
+
+            .build();
+
+        
+
+        OrderItem item2 = OrderItem.builder()
+
+            .product(mouse)
+
+            .quantity(2)
+
+            .build();
+
+        
+
+        ShippingAddress address = ShippingAddress.builder()
+
+            .recipientName(&quot;John Doe&quot;)
+
+            .street(&quot;123 Main Street&quot;)
+
+            .city(&quot;San Francisco&quot;)
+
+            .state(&quot;CA&quot;)
+
+            .zipCode(&quot;94102&quot;)
+
+            .phoneNumber(&quot;555-1234&quot;)
+
+            .build();
+
+        
+
+        PaymentInfo payment = PaymentInfo.builder()
+
+            .cardNumber(&quot;4111111111111111&quot;)
+
+            .cardHolderName(&quot;John Doe&quot;)
+
+            .expiryDate(&quot;12/25&quot;)
+
+            .cvv(&quot;123&quot;)
+
+            .billingAddress(&quot;123 Main Street&quot;)
+
+            .build();
+
+        
+
+        Order order1 = Order.builder()
+
+            .orderId(&quot;ORD-2025-001&quot;)
+
+            .customerId(&quot;CUST-12345&quot;)
+
+            .addItem(item1)
+
+            .addItem(item2)
+
+            .shippingAddress(address)
+
+            .paymentInfo(payment)
+
+            .giftWrap()
+
+            .promoCode(&quot;SAVE10&quot;)
+
+            .notes(&quot;Please leave at front door&quot;)
+
+            .build();
+
+        
+
+        System.out.println(order1);
+
+        
+
+        // ========== EXAMPLE 2: Using Nested Builders (Inline) ==========
+
+        System.out.println(&quot;\n===== EXAMPLE 2: Nested Builders Approach =====\n&quot;);
+
+        
+
+        Order order2 = Order.builder()
+
+            .orderId(&quot;ORD-2025-002&quot;)
+
+            .customerId(&quot;CUST-67890&quot;)
+
+            .addItem(OrderItem.builder()
+
+                .product(Product.builder()
+
+                    .id(&quot;PROD-003&quot;)
+
+                    .name(&quot;iPhone 15 Pro&quot;)
+
+                    .price(999.99)
+
+                    .category(&quot;Electronics&quot;))
+
+                .quantity(1))
+
+            .addItem(OrderItem.builder()
+
+                .product(Product.builder()
+
+                    .id(&quot;PROD-004&quot;)
+
+                    .name(&quot;AirPods Pro&quot;)
+
+                    .price(249.99)
+
+                    .category(&quot;Accessories&quot;))
+
+                .quantity(1)
+
+                .discount(0.10))  // 10% discount
+
+            .shippingAddress(ShippingAddress.builder()
+
+                .recipientName(&quot;Jane Smith&quot;)
+
+                .street(&quot;456 Oak Avenue&quot;)
+
+                .city(&quot;New York&quot;)
+
+                .state(&quot;NY&quot;)
+
+                .zipCode(&quot;10001&quot;)
+
+                .phoneNumber(&quot;555-5678&quot;))
+
+            .paymentInfo(PaymentInfo.builder()
+
+                .cardNumber(&quot;5555555555554444&quot;)
+
+                .cardHolderName(&quot;Jane Smith&quot;)
+
+                .expiryDate(&quot;06/26&quot;)
+
+                .cvv(&quot;456&quot;)
+
+                .billingAddress(&quot;456 Oak Avenue&quot;))
+
+            .build();
+
+        
+
+        System.out.println(order2);
+
+        
+
+        // ========== EXAMPLE 3: Using Consumer Pattern (Most Elegant!) ==========
+
+        System.out.println(&quot;\n===== EXAMPLE 3: Consumer Pattern Approach (Lambda Magic!) =====\n&quot;);
+
+        
+
+        Order order3 = Order.builder()
+
+            .orderId(&quot;ORD-2025-003&quot;)
+
+            .customerId(&quot;CUST-11111&quot;)
+
+            // Add items using lambda configuration
+
+            .addItem(item -&gt; item
+
+                .product(prod -&gt; prod
+
+                    .id(&quot;PROD-005&quot;)
+
+                    .name(&quot;iPad Air&quot;)
+
+                    .price(599.99)
+
+                    .category(&quot;Tablets&quot;))
+
+                .quantity(2))
+
+            .addItem(item -&gt; item
+
+                .product(prod -&gt; prod
+
+                    .id(&quot;PROD-006&quot;)
+
+                    .name(&quot;Apple Pencil&quot;)
+
+                    .price(129.99)
+
+                    .category(&quot;Accessories&quot;))
+
+                .quantity(2)
+
+                .discount(0.15))  // 15% discount
+
+            // Configure shipping address with lambda
+
+            .shippingAddress(addr -&gt; addr
+
+                .recipientName(&quot;Bob Johnson&quot;)
+
+                .street(&quot;789 Pine Road&quot;)
+
+                .city(&quot;Seattle&quot;)
+
+                .state(&quot;WA&quot;)
+
+                .zipCode(&quot;98101&quot;)
+
+                .phoneNumber(&quot;555-9999&quot;))
+
+            // Configure payment with lambda
+
+            .paymentInfo(payment -&gt; payment
+
+                .cardNumber(&quot;378282246310005&quot;)
+
+                .cardHolderName(&quot;Bob Johnson&quot;)
+
+                .expiryDate(&quot;03/27&quot;)
+
+                .cvv(&quot;789&quot;)
+
+                .billingAddress(&quot;789 Pine Road&quot;))
+
+            .giftWrap()
+
+            .notes(&quot;Birthday gift - please include card&quot;)
+
+            .build();
+
+        
+
+        System.out.println(order3);
+
+        
+
+        // ========== EXAMPLE 4: Mixed Approach (Real-World Scenario) ==========
+
+        System.out.println(&quot;\n===== EXAMPLE 4: Mixed Approach =====\n&quot;);
+
+        
+
+        // Reuse existing products
+
+        Product existingProduct = Product.builder()
+
+            .id(&quot;PROD-007&quot;)
+
+            .name(&quot;Samsung Galaxy&quot;)
+
+            .price(899.99)
+
+            .category(&quot;Electronics&quot;)
+
+            .build();
+
+        
+
+        Order order4 = Order.builder()
+
+            .orderId(&quot;ORD-2025-004&quot;)
+
+            .customerId(&quot;CUST-22222&quot;)
+
+            // Mix of approaches
+
+            .addItem(OrderItem.builder()
+
+                .product(existingProduct)  // Pre-built product
+
+                .quantity(1))
+
+            .addItem(item -&gt; item  // Lambda for new product
+
+                .product(prod -&gt; prod
+
+                    .id(&quot;PROD-008&quot;)
+
+                    .name(&quot;Screen Protector&quot;)
+
+                    .price(19.99)
+
+                    .category(&quot;Accessories&quot;))
+
+                .quantity(3))
+
+            .shippingAddress(addr -&gt; addr  // Lambda for address
+
+                .recipientName(&quot;Alice Williams&quot;)
+
+                .street(&quot;321 Elm Street&quot;)
+
+                .city(&quot;Austin&quot;)
+
+                .state(&quot;TX&quot;)
+
+                .zipCode(&quot;78701&quot;)
+
+                .phoneNumber(&quot;555-3333&quot;))
+
+            .paymentInfo(payment -&gt; payment
+
+                .cardNumber(&quot;6011111111111117&quot;)
+
+                .cardHolderName(&quot;Alice Williams&quot;)
+
+                .expiryDate(&quot;09/25&quot;)
+
+                .cvv(&quot;321&quot;)
+
+                .billingAddress(&quot;321 Elm Street&quot;))
+
+            .promoCode(&quot;SAVE10&quot;)
+
+            .build();
+
+        
+
+        System.out.println(order4);
+
+        
+
+        System.out.println(&quot;\n✅ All orders created successfully!&quot;);
+
+        System.out.println(&quot;\nKey Takeaways:&quot;);
+
+        System.out.println(&quot;1. ✅ Inner Static Builder pattern handles complex objects elegantly&quot;);
+
+        System.out.println(&quot;2. ✅ Three approaches: Pre-built, Nested builders, Consumer pattern&quot;);
+
+        System.out.println(&quot;3. ✅ Consumer pattern (lambdas) is most elegant for nested objects&quot;);
+
+        System.out.println(&quot;4. ✅ Collections handled with add() methods&quot;);
+
+        System.out.println(&quot;5. ✅ Validation happens in build() method&quot;);
+
+        System.out.println(&quot;6. ✅ Objects are immutable and thread-safe&quot;);
+
+    }
+
+}
+
+</code></pre>
+<hr>
+<h2><strong>Output Example:</strong></h2>
+<pre><code class="language-java">
+🛒 E-COMMERCE ORDER BUILDER DEMO
+
+
+
+===== EXAMPLE 1: Pre-Built Objects Approach =====
+
+
+
+============================================================
+
+ORDER #ORD-2025-001
+
+============================================================
+
+Customer ID: CUST-12345
+
+Order Date: 2025-11-05T10:30:45.123
+
+
+
+ITEMS:
+
+------------------------------------------------------------
+
+OrderItem[product=MacBook Pro, quantity=1, discount=5.00%, total=$2374.99]
+
+OrderItem[product=Magic Mouse, quantity=2, discount=0.00%, total=$159.98]
+
+------------------------------------------------------------
+
+Subtotal: $2534.97
+
+Tax: $202.80
+
+Shipping: $15.00 (Gift Wrap)
+
+Promo Code: SAVE10 applied
+
+TOTAL: $2476.59
+
+
+
+SHIPPING TO:
+
+John Doe
+
+123 Main Street
+
+San Francisco, CA 94102
+
+USA
+
+Phone: 555-1234
+
+
+
+PAYMENT:
+
+PaymentInfo[card=**** **** **** 1111, holder=John Doe]
+
+
+
+NOTES: Please leave at front door
+
+============================================================
+
+</code></pre>
+<hr>
+<h2><strong>Key Strategies for Complex Objects - Summary</strong></h2>
+<h3><strong>1. Pre-Built Objects</strong></h3>
+<pre><code class="language-java">
+.shippingAddress(address)  // Pass already-built object
+
+</code></pre>
+<p><strong>Use when:</strong> Object is reused across multiple orders</p>
+<h3><strong>2. Nested Builders</strong></h3>
+<pre><code class="language-java">
+.shippingAddress(ShippingAddress.builder()
+
+    .street(&quot;123 Main St&quot;)
+
+    .city(&quot;NYC&quot;))
+
+</code></pre>
+<p><strong>Use when:</strong> Building inline, straightforward approach</p>
+<h3><strong>3. Consumer Pattern (Lambda)</strong> ⭐ <strong>RECOMMENDED</strong></h3>
+<pre><code class="language-java">
+.shippingAddress(addr -&gt; addr
+
+    .street(&quot;123 Main St&quot;)
+
+    .city(&quot;NYC&quot;))
+
+</code></pre>
+<p><strong>Use when:</strong> You want the cleanest, most modern syntax</p>
+<h3><strong>4. Collections</strong></h3>
+<pre><code class="language-java">
+.addItem(item)           // Single item
+
+.addItem(itemBuilder)    // Using builder
+
+.addItem(item -&gt; {...})  // Using lambda
+
+.items(itemList)         // Multiple items
+
+</code></pre>
+<hr>
+<h2><strong>Pattern to Master - Checklist</strong></h2>
+<pre><code class="language-java">
+public class MyClass {
+
+    // 1. Final fields (immutable)
+
+    private final Type field;
+
+    
+
+    // 2. Private constructor accepting builder
+
+    private MyClass(Builder builder) {
+
+        this.field = builder.field;
+
+    }
+
+    
+
+    // 3. Static builder() method
+
+    public static Builder builder() {
+
+        return new Builder();
+
+    }
+
+    
+
+    // 4. Inner static Builder class
+
+    public static class Builder {
+
+        // Non-final fields in builder
+
+        private Type field;
+
+        
+
+        // Fluent setters returning &#x27;this&#x27;
+
+        public Builder field(Type field) {
+
+            this.field = field;
+
+            return this;
+
+        }
+
+        
+
+        // For complex objects: Accept object, builder, or Consumer
+
+        public Builder complex(ComplexType obj) { ... }
+
+        public Builder complex(ComplexType.Builder builder) { ... }
+
+        public Builder complex(Consumer&lt;ComplexType.Builder&gt; config) { ... }
+
+        
+
+        // For collections: Add methods
+
+        public Builder addItem(Item item) { ... }
+
+        public Builder items(List&lt;Item&gt; items) { ... }
+
+        
+
+        // Build method with validation
+
+        public MyClass build() {
+
+            // Validate
+
+            if (field == null) throw new IllegalStateException(&quot;Required&quot;);
+
+            return new MyClass(this);
+
+        }
+
+    }
+
+    
+
+    // 5. Getters only (no setters)
+
+    public Type getField() { return field; }
+
+}
+
+</code></pre>
+<hr>
+
+    </div>
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+</body>
+</html>
