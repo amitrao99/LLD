@@ -1,0 +1,26 @@
+Usage of static utility classes, methods learn.
+Usage of static variables and fuctions and scopes confirm.
+usage of ciustom comparator
+sorting
+Functional interface
+managing exception, creation and handling.
+BIgdecimal
+
+
+
+TODO  : 
+managing exception, creation and handling.
+BIgdecimal
+usage of ciustom comparator
+Usage of static utility classes, methods learn.
+Usage of static variables and fuctions and scopes confirm.
+
+Maps
+ErrorCode Logging
+dir naming usual ways, conventions
+timestamped UUID
+
+
+reentrant locks usage
+ENUMs
+Threads usage

@@ -1,0 +1,7 @@
+- Record
+- Prototype
+- Memento
+- Command
+- Adapter
+- State
+- Decorator

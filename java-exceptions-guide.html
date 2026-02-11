@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Exceptions Guide - Chat Conversation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-cyan: #06b6d4;
+            --border-color: #334155;
+            --code-bg: #1e293b;
+            --user-bg: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            --assistant-bg: #1e293b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .header .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .header .meta {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .header .meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Chat Messages */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+
+        .user .avatar {
+            background: var(--user-bg);
+            color: white;
+        }
+
+        .assistant .avatar {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            color: white;
+        }
+
+        .message-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .message-header .name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .user .name { color: var(--accent-blue); }
+        .assistant .name { color: var(--accent-green); }
+
+        .message-header .timestamp {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .message-body {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border-top-left-radius: 4px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .user .message-body {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        /* Typography in messages */
+        .message-body h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 2rem 0 1rem 0;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent-purple);
+            color: var(--text-primary);
+        }
+
+        .message-body h1:first-child {
+            margin-top: 0;
+        }
+
+        .message-body h2 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin: 1.75rem 0 1rem 0;
+            color: var(--accent-blue);
+        }
+
+        .message-body h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem 0;
+            color: var(--accent-cyan);
+        }
+
+        .message-body p {
+            margin: 1rem 0;
+            color: var(--text-primary);
+        }
+
+        .message-body hr {
+            border: none;
+            height: 1px;
+            background: var(--border-color);
+            margin: 2rem 0;
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            margin: 1.25rem 0;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .code-header {
+            background: var(--bg-tertiary);
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-block pre {
+            margin: 0;
+            padding: 1rem;
+            overflow-x: auto;
+        }
+
+        .code-block code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        /* Inline code */
+        code:not(.code-block code) {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-tertiary);
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.85em;
+            color: var(--accent-cyan);
+        }
+
+        /* Syntax highlighting */
+        .keyword { color: var(--accent-purple); }
+        .string { color: var(--accent-green); }
+        .comment { color: var(--text-muted); font-style: italic; }
+        .class-name { color: var(--accent-cyan); }
+        .method { color: var(--accent-blue); }
+        .annotation { color: var(--accent-orange); }
+        .number { color: var(--accent-orange); }
+
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 1.25rem 0;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            padding: 0.875rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        /* Lists */
+        .message-body ul, .message-body ol {
+            margin: 1rem 0;
+            padding-left: 1.5rem;
+        }
+
+        .message-body li {
+            margin: 0.5rem 0;
+            color: var(--text-secondary);
+        }
+
+        .message-body li::marker {
+            color: var(--accent-blue);
+        }
+
+        /* Blockquotes / Callouts */
+        .callout {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid var(--accent-blue);
+            padding: 1rem 1.25rem;
+            margin: 1.25rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .callout.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--accent-orange);
+        }
+
+        .callout.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left-color: var(--accent-green);
+        }
+
+        .callout.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: var(--accent-red);
+        }
+
+        /* Strong and emphasis */
+        strong {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        em {
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+
+        /* Hierarchy diagram */
+        .hierarchy {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-primary);
+            padding: 1.25rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin: 1.25rem 0;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            overflow-x: auto;
+        }
+
+        .hierarchy .node { color: var(--accent-cyan); }
+        .hierarchy .branch { color: var(--text-muted); }
+        .hierarchy .note { color: var(--accent-orange); }
+
+        /* Section divider */
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 3rem 0;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .section-divider::before,
+        .section-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 3rem 0;
+            margin-top: 3rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.75rem;
+            }
+
+            .message {
+                gap: 0.75rem;
+            }
+
+            .avatar {
+                width: 32px;
+                height: 32px;
+                font-size: 0.75rem;
+            }
+
+            .message-body {
+                padding: 1rem;
+            }
+
+            .code-block pre {
+                padding: 0.75rem;
+            }
+
+            .code-block code {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Java Exceptions Guide</h1>
+            <p class="subtitle">A Practical Guide for the Working Engineer</p>
+            <div class="meta">
+                <span>📚 Complete Chat Conversation</span>
+                <span>☕ Java / Exception Handling</span>
+            </div>
+        </header>
+
+        <!-- Chat Container -->
+        <div class="chat-container">
+
+            <!-- User Message 1 -->
+            <div class="message user">
+                <div class="avatar">U</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="name">User</span>
+                        <span class="timestamp">Initial Question</span>
+                    </div>
+                    <div class="message-body">
+                        <p><strong>Context Code: LedgerException.java</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">package</span> org.monzo.error;
+
+<span class="keyword">public class</span> <span class="class-name">LedgerException</span> <span class="keyword">extends</span> <span class="class-name">Exception</span> {
+    <span class="keyword">private final</span> <span class="class-name">ErrorCode</span> errorCode;
+    <span class="keyword">private final</span> <span class="class-name">String</span> details;
+
+    <span class="keyword">public</span> <span class="method">LedgerException</span>(<span class="class-name">ErrorCode</span> errorCode) {
+        <span class="keyword">super</span>(errorCode.<span class="method">getMessage</span>());
+        <span class="keyword">this</span>.errorCode = errorCode;
+        <span class="keyword">this</span>.details = <span class="keyword">null</span>;
+    }
+
+    <span class="keyword">public</span> <span class="method">LedgerException</span>(<span class="class-name">ErrorCode</span> errorCode, <span class="class-name">String</span> details) {
+        <span class="keyword">super</span>(errorCode.<span class="method">getMessage</span>() + <span class="string">": "</span> + details);
+        <span class="keyword">this</span>.errorCode = errorCode;
+        <span class="keyword">this</span>.details = details;
+    }
+
+    <span class="keyword">public</span> <span class="method">LedgerException</span>(<span class="class-name">ErrorCode</span> errorCode, <span class="class-name">String</span> details, <span class="class-name">Throwable</span> cause) {
+        <span class="keyword">super</span>(errorCode.<span class="method">getMessage</span>() + <span class="string">": "</span> + details, cause);
+        <span class="keyword">this</span>.errorCode = errorCode;
+        <span class="keyword">this</span>.details = details;
+    }
+
+    <span class="keyword">public</span> <span class="class-name">ErrorCode</span> <span class="method">getErrorCode</span>() {
+        <span class="keyword">return</span> errorCode;
+    }
+
+    <span class="keyword">public</span> <span class="class-name">String</span> <span class="method">getDetails</span>() {
+        <span class="keyword">return</span> details;
+    }
+
+    <span class="keyword">public int</span> <span class="method">getHttpStatus</span>() {
+        <span class="keyword">return</span> errorCode.<span class="method">getHttpStatus</span>();
+    }
+
+    <span class="comment">/**
+     * Returns a structured error response suitable for API responses or logging.
+     */</span>
+    <span class="keyword">public</span> <span class="class-name">ErrorResponse</span> <span class="method">toErrorResponse</span>() {
+        <span class="keyword">return new</span> <span class="class-name">ErrorResponse</span>(
+                errorCode.<span class="method">getCode</span>(),
+                errorCode.<span class="method">getMessage</span>(),
+                details,
+                errorCode.<span class="method">getHttpStatus</span>()
+        );
+    }
+
+    <span class="annotation">@Override</span>
+    <span class="keyword">public</span> <span class="class-name">String</span> <span class="method">toString</span>() {
+        <span class="keyword">if</span> (details != <span class="keyword">null</span>) {
+            <span class="keyword">return</span> <span class="class-name">String</span>.<span class="method">format</span>(<span class="string">"%s - %s"</span>, errorCode, details);
+        }
+        <span class="keyword">return</span> errorCode.<span class="method">toString</span>();
+    }
+}</code></pre>
+                        </div>
+
+                        <p>Create a comprehensive but meaningful document — not utterly long and less required, very long where required, very concise where it needs to be concise — considering I'm a mid-level Java engineer.</p>
+                        
+                        <p>Create a fully covering document on exceptions and creating exceptions. This explanation kind of tipped me over a little bit. I'm not 100% sure about exceptions in Java.</p>
+                        
+                        <p>Can you create a full and precise document that explains from ground up what exceptions are, how they're handled in Java? Assume that I'm a mid-level engineer who's kind of revising most of the things, so you don't have to really start by saying what exception is. That much level I understand, but then there might be like, people might forget, right? What type of exceptions are there, which are checked, which are non-checked?</p>
+                        
+                        <p>And then mainly what I want to see is: what are the parts of an exception? And then when we raise our own exceptions, what happens in this example? What are we doing and what are the things we usually do? What are the best practices while creating your custom exceptions or even dealing with normal exceptions?</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider">Response</div>
+
+            <!-- Assistant Message 1 -->
+            <div class="message assistant">
+                <div class="avatar">AI</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="name">Claude</span>
+                        <span class="timestamp">Comprehensive Guide</span>
+                    </div>
+                    <div class="message-body">
+                        <h1>Java Exceptions: A Practical Guide for the Working Engineer</h1>
+
+                        <hr>
+
+                        <h2>1. The Exception Hierarchy (Quick Refresher)</h2>
+
+                        <div class="hierarchy">
+<span class="node">Throwable</span>
+<span class="branch">├──</span> <span class="node">Error</span> <span class="note">(Don't catch these - JVM problems like OutOfMemoryError)</span>
+<span class="branch">└──</span> <span class="node">Exception</span>
+    <span class="branch">├──</span> <span class="node">RuntimeException</span> <span class="note">(Unchecked)</span>
+    <span class="branch">│   ├──</span> NullPointerException
+    <span class="branch">│   ├──</span> IllegalArgumentException
+    <span class="branch">│   ├──</span> IllegalStateException
+    <span class="branch">│   └──</span> ...
+    <span class="branch">└──</span> <span class="node">Other Exceptions</span> <span class="note">(Checked)</span>
+        <span class="branch">├──</span> IOException
+        <span class="branch">├──</span> SQLException
+        <span class="branch">└──</span> ...
+                        </div>
+
+                        <h3>Checked vs Unchecked</h3>
+
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Checked</th>
+                                        <th>Unchecked</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Extends <code>Exception</code> directly</td>
+                                        <td>Extends <code>RuntimeException</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Compiler forces you to handle or declare</td>
+                                        <td>No compile-time enforcement</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Recoverable conditions (file not found, network issues)</td>
+                                        <td>Programming errors (null access, bad arguments)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Must use <code>throws</code> clause or try-catch</td>
+                                        <td>Optional handling</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="callout">
+                            <strong>Your <code>LedgerException</code> extends <code>Exception</code> directly → it's checked.</strong> Callers must handle it.
+                        </div>
+
+                        <hr>
+
+                        <h2>2. Anatomy of an Exception</h2>
+
+                        <p>Every exception has these key components:</p>
+
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">public class</span> <span class="class-name">Throwable</span> {
+    <span class="keyword">private</span> <span class="class-name">String</span> detailMessage;      <span class="comment">// The "what happened" message</span>
+    <span class="keyword">private</span> <span class="class-name">Throwable</span> cause;           <span class="comment">// The underlying exception (if any)</span>
+    <span class="keyword">private</span> <span class="class-name">StackTraceElement</span>[] stackTrace;  <span class="comment">// The "where it happened"</span>
+}</code></pre>
+                        </div>
+
+                        <h3>The Three Pillars</h3>
+
+                        <p><strong>1. Message</strong> — Human-readable description</p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">throw new</span> <span class="class-name">Exception</span>(<span class="string">"User not found with ID: 123"</span>);
+<span class="comment">//                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this is getMessage()</span></code></pre>
+                        </div>
+
+                        <p><strong>2. Cause</strong> — Exception chaining (preserving the root cause)</p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">try</span> {
+    database.<span class="method">query</span>(...);
+} <span class="keyword">catch</span> (<span class="class-name">SQLException</span> e) {
+    <span class="keyword">throw new</span> <span class="class-name">LedgerException</span>(<span class="class-name">ErrorCode</span>.DB_ERROR, <span class="string">"Query failed"</span>, e);
+    <span class="comment">//                                                            ^ cause preserved</span>
+}</code></pre>
+                        </div>
+
+                        <p><strong>3. Stack Trace</strong> — The breadcrumb trail</p>
+                        <div class="code-block">
+                            <div class="code-header">stack trace</div>
+                            <pre><code>org.monzo.error.LedgerException: Database error: Query failed
+    at AccountService.getBalance(AccountService.java:45)    <span class="comment">← where thrown</span>
+    at TransactionController.process(TransactionController.java:102)
+    at ...
+<span class="keyword">Caused by:</span> java.sql.SQLException: Connection refused        <span class="comment">← original cause</span>
+    at com.mysql.jdbc.Driver.connect(Driver.java:234)</code></pre>
+                        </div>
+
+                        <hr>
+
+                        <h2>3. Dissecting Your LedgerException</h2>
+
+                        <p>Let's break down what your code is doing and why:</p>
+
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">public class</span> <span class="class-name">LedgerException</span> <span class="keyword">extends</span> <span class="class-name">Exception</span> {</code></pre>
+                        </div>
+
+                        <div class="callout success">
+                            <strong>Decision:</strong> Extends <code>Exception</code> → checked exception. This is appropriate for a ledger system where errors (insufficient funds, invalid accounts) are expected conditions that callers <em>must</em> handle.
+                        </div>
+
+                        <h3>The Fields</h3>
+
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">private final</span> <span class="class-name">ErrorCode</span> errorCode;  <span class="comment">// Structured, machine-readable identifier</span>
+<span class="keyword">private final</span> <span class="class-name">String</span> details;       <span class="comment">// Runtime-specific context</span></code></pre>
+                        </div>
+
+                        <p><strong>Why both?</strong></p>
+                        <ul>
+                            <li><code>ErrorCode</code> is stable, loggable, mappable to HTTP status → for systems</li>
+                            <li><code>details</code> is dynamic, contextual → for debugging</li>
+                        </ul>
+
+                        <p>Example:</p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">throw new</span> <span class="class-name">LedgerException</span>(<span class="class-name">ErrorCode</span>.INSUFFICIENT_FUNDS, <span class="string">"Attempted: £500, Available: £123.45"</span>);
+<span class="comment">//                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//                        Stable code for API response   Context for logs/debugging</span></code></pre>
+                        </div>
+
+                        <h3>The Constructors — The Rule of Three</h3>
+
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="comment">// 1. Minimal — when the error code says it all</span>
+<span class="keyword">public</span> <span class="method">LedgerException</span>(<span class="class-name">ErrorCode</span> errorCode) {
+    <span class="keyword">super</span>(errorCode.<span class="method">getMessage</span>());  <span class="comment">// Parent gets the message</span>
+    <span class="keyword">this</span>.errorCode = errorCode;
+    <span class="keyword">this</span>.details = <span class="keyword">null</span>;
+}
+
+<span class="comment">// 2. With context — the common case</span>
+<span class="keyword">public</span> <span class="method">LedgerException</span>(<span class="class-name">ErrorCode</span> errorCode, <span class="class-name">String</span> details) {
+    <span class="keyword">super</span>(errorCode.<span class="method">getMessage</span>() + <span class="string">": "</span> + details);  <span class="comment">// Concatenated for getMessage()</span>
+    <span class="keyword">this</span>.errorCode = errorCode;
+    <span class="keyword">this</span>.details = details;
+}
+
+<span class="comment">// 3. With cause — for exception chaining</span>
+<span class="keyword">public</span> <span class="method">LedgerException</span>(<span class="class-name">ErrorCode</span> errorCode, <span class="class-name">String</span> details, <span class="class-name">Throwable</span> cause) {
+    <span class="keyword">super</span>(errorCode.<span class="method">getMessage</span>() + <span class="string">": "</span> + details, cause);  <span class="comment">// ← Cause passed to parent</span>
+    <span class="keyword">this</span>.errorCode = errorCode;
+    <span class="keyword">this</span>.details = details;
+}</code></pre>
+                        </div>
+
+                        <div class="callout warning">
+                            <strong>Critical:</strong> The third constructor preserves the cause chain. Without it, you lose the stack trace of the original exception.
+                        </div>
+
+                        <h3>The API-Friendly Conversion</h3>
+
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">public</span> <span class="class-name">ErrorResponse</span> <span class="method">toErrorResponse</span>() {
+    <span class="keyword">return new</span> <span class="class-name">ErrorResponse</span>(
+        errorCode.<span class="method">getCode</span>(),      <span class="comment">// "INSUFFICIENT_FUNDS"</span>
+        errorCode.<span class="method">getMessage</span>(),   <span class="comment">// "Insufficient funds for transaction"</span>
+        details,                  <span class="comment">// "Attempted: £500, Available: £123.45"</span>
+        errorCode.<span class="method">getHttpStatus</span>() <span class="comment">// 400</span>
+    );
+}</code></pre>
+                        </div>
+
+                        <p>This pattern keeps your exception useful both internally (for logging, stack traces) and externally (for API responses). The exception itself carries everything needed to generate a proper error response.</p>
+
+                        <hr>
+
+                        <h2>4. When to Create Custom Exceptions</h2>
+
+                        <p><strong>Create a custom exception when:</strong></p>
+                        <ul>
+                            <li>You need to attach domain-specific data (error codes, entity IDs, etc.)</li>
+                            <li>You want a clear type for catch blocks (<code>catch (LedgerException e)</code>)</li>
+                            <li>You need to map exceptions to specific API responses</li>
+                            <li>Multiple error conditions share common handling patterns</li>
+                        </ul>
+
+                        <p><strong>Don't create a custom exception when:</strong></p>
+                        <ul>
+                            <li>Standard exceptions suffice (<code>IllegalArgumentException</code>, <code>IllegalStateException</code>)</li>
+                            <li>You'd just be wrapping with no added value</li>
+                            <li>It's a one-off error with no special handling needs</li>
+                        </ul>
+
+                        <hr>
+
+                        <h2>5. Best Practices</h2>
+
+                        <h3>Creating Custom Exceptions</h3>
+
+                        <p><strong>1. Choose checked vs unchecked deliberately</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="comment">// Checked: "Caller can and should recover from this"</span>
+<span class="keyword">public class</span> <span class="class-name">InsufficientFundsException</span> <span class="keyword">extends</span> <span class="class-name">Exception</span> { }
+
+<span class="comment">// Unchecked: "This is a bug, fail fast"</span>
+<span class="keyword">public class</span> <span class="class-name">InvalidAccountStateException</span> <span class="keyword">extends</span> <span class="class-name">RuntimeException</span> { }</code></pre>
+                        </div>
+
+                        <p><strong>2. Always provide the cause-accepting constructor</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="comment">// Without this, you lose the original stack trace</span>
+<span class="keyword">public</span> <span class="method">LedgerException</span>(<span class="class-name">ErrorCode</span> code, <span class="class-name">String</span> details, <span class="class-name">Throwable</span> cause) {
+    <span class="keyword">super</span>(code.<span class="method">getMessage</span>() + <span class="string">": "</span> + details, cause);  <span class="comment">// ← cause passed up</span>
+    <span class="comment">// ...</span>
+}</code></pre>
+                        </div>
+
+                        <p><strong>3. Make exceptions immutable</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">private final</span> <span class="class-name">ErrorCode</span> errorCode;  <span class="comment">// ← final</span>
+<span class="keyword">private final</span> <span class="class-name">String</span> details;       <span class="comment">// ← final</span></code></pre>
+                        </div>
+
+                        <p><strong>4. Override <code>toString()</code> for better logging</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="annotation">@Override</span>
+<span class="keyword">public</span> <span class="class-name">String</span> <span class="method">toString</span>() {
+    <span class="keyword">if</span> (details != <span class="keyword">null</span>) {
+        <span class="keyword">return</span> <span class="class-name">String</span>.<span class="method">format</span>(<span class="string">"%s - %s"</span>, errorCode, details);
+    }
+    <span class="keyword">return</span> errorCode.<span class="method">toString</span>();
+}
+<span class="comment">// Logs: "INSUFFICIENT_FUNDS(400) - Attempted: £500, Available: £123.45"</span></code></pre>
+                        </div>
+
+                        <p><strong>5. Include what you need, nothing more</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="comment">// Good: Relevant context</span>
+<span class="keyword">throw new</span> <span class="class-name">LedgerException</span>(<span class="class-name">ErrorCode</span>.ACCOUNT_NOT_FOUND, <span class="string">"accountId="</span> + accountId);
+
+<span class="comment">// Bad: Too much (security risk, log bloat)</span>
+<span class="keyword">throw new</span> <span class="class-name">LedgerException</span>(<span class="class-name">ErrorCode</span>.ACCOUNT_NOT_FOUND, account.<span class="method">toString</span>());</code></pre>
+                        </div>
+
+                        <h3>Throwing Exceptions</h3>
+
+                        <p><strong>1. Throw early, at the point of detection</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">public void</span> <span class="method">transfer</span>(<span class="class-name">Account</span> from, <span class="class-name">Account</span> to, <span class="class-name">Money</span> amount) <span class="keyword">throws</span> <span class="class-name">LedgerException</span> {
+    <span class="keyword">if</span> (from == <span class="keyword">null</span>) {
+        <span class="keyword">throw new</span> <span class="class-name">IllegalArgumentException</span>(<span class="string">"Source account cannot be null"</span>);  <span class="comment">// Throw immediately</span>
+    }
+    <span class="comment">// ... rest of method</span>
+}</code></pre>
+                        </div>
+
+                        <p><strong>2. Include actionable context</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="comment">// Bad</span>
+<span class="keyword">throw new</span> <span class="class-name">LedgerException</span>(<span class="class-name">ErrorCode</span>.VALIDATION_ERROR, <span class="string">"Invalid input"</span>);
+
+<span class="comment">// Good</span>
+<span class="keyword">throw new</span> <span class="class-name">LedgerException</span>(<span class="class-name">ErrorCode</span>.VALIDATION_ERROR, 
+    <span class="string">"Amount must be positive, got: "</span> + amount);</code></pre>
+                        </div>
+
+                        <p><strong>3. Don't use exceptions for flow control</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="comment">// Bad — exceptions are expensive</span>
+<span class="keyword">try</span> {
+    <span class="keyword">return</span> accounts.<span class="method">get</span>(id);
+} <span class="keyword">catch</span> (<span class="class-name">NotFoundException</span> e) {
+    <span class="keyword">return</span> <span class="method">createDefault</span>();
+}
+
+<span class="comment">// Good — check first</span>
+<span class="keyword">if</span> (accounts.<span class="method">contains</span>(id)) {
+    <span class="keyword">return</span> accounts.<span class="method">get</span>(id);
+}
+<span class="keyword">return</span> <span class="method">createDefault</span>();</code></pre>
+                        </div>
+
+                        <h3>Catching Exceptions</h3>
+
+                        <p><strong>1. Catch specific exceptions first</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">try</span> {
+    ledger.<span class="method">process</span>(transaction);
+} <span class="keyword">catch</span> (<span class="class-name">InsufficientFundsException</span> e) {
+    <span class="comment">// Handle specifically</span>
+} <span class="keyword">catch</span> (<span class="class-name">LedgerException</span> e) {
+    <span class="comment">// Handle other ledger errors</span>
+} <span class="keyword">catch</span> (<span class="class-name">Exception</span> e) {
+    <span class="comment">// Last resort</span>
+}</code></pre>
+                        </div>
+
+                        <p><strong>2. Never catch and ignore silently</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="comment">// Never do this</span>
+<span class="keyword">try</span> {
+    <span class="method">riskyOperation</span>();
+} <span class="keyword">catch</span> (<span class="class-name">Exception</span> e) {
+    <span class="comment">// 🦗 crickets</span>
+}
+
+<span class="comment">// At minimum</span>
+<span class="keyword">catch</span> (<span class="class-name">Exception</span> e) {
+    log.<span class="method">error</span>(<span class="string">"Operation failed"</span>, e);
+}</code></pre>
+                        </div>
+
+                        <p><strong>3. Wrap exceptions at layer boundaries</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="comment">// In your service layer</span>
+<span class="keyword">public</span> <span class="class-name">Account</span> <span class="method">getAccount</span>(<span class="class-name">String</span> id) <span class="keyword">throws</span> <span class="class-name">LedgerException</span> {
+    <span class="keyword">try</span> {
+        <span class="keyword">return</span> repository.<span class="method">findById</span>(id);
+    } <span class="keyword">catch</span> (<span class="class-name">SQLException</span> e) {
+        <span class="comment">// Don't leak SQL details to callers</span>
+        <span class="keyword">throw new</span> <span class="class-name">LedgerException</span>(<span class="class-name">ErrorCode</span>.DB_ERROR, <span class="string">"Failed to fetch account"</span>, e);
+    }
+}</code></pre>
+                        </div>
+
+                        <p><strong>4. Use try-with-resources for cleanup</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">try</span> (<span class="class-name">Connection</span> conn = dataSource.<span class="method">getConnection</span>();
+     <span class="class-name">PreparedStatement</span> stmt = conn.<span class="method">prepareStatement</span>(sql)) {
+    <span class="comment">// ...</span>
+}  <span class="comment">// Auto-closed even if exception thrown</span></code></pre>
+                        </div>
+
+                        <p><strong>5. Don't catch <code>Throwable</code> or <code>Error</code></strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="comment">// Don't do this — Errors are JVM-level problems</span>
+<span class="keyword">catch</span> (<span class="class-name">Throwable</span> t) { }
+
+<span class="comment">// Acceptable</span>
+<span class="keyword">catch</span> (<span class="class-name">Exception</span> e) { }</code></pre>
+                        </div>
+
+                        <hr>
+
+                        <h2>6. Common Patterns</h2>
+
+                        <h3>The ErrorCode Enum Pattern (Your Approach)</h3>
+
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">public enum</span> <span class="class-name">ErrorCode</span> {
+    ACCOUNT_NOT_FOUND(<span class="string">"ACC_001"</span>, <span class="string">"Account not found"</span>, <span class="number">404</span>),
+    INSUFFICIENT_FUNDS(<span class="string">"ACC_002"</span>, <span class="string">"Insufficient funds"</span>, <span class="number">400</span>),
+    DB_ERROR(<span class="string">"SYS_001"</span>, <span class="string">"Database error"</span>, <span class="number">500</span>);
+
+    <span class="keyword">private final</span> <span class="class-name">String</span> code;
+    <span class="keyword">private final</span> <span class="class-name">String</span> message;
+    <span class="keyword">private final int</span> httpStatus;
+
+    <span class="comment">// constructor, getters...</span>
+}</code></pre>
+                        </div>
+
+                        <div class="callout success">
+                            <strong>Why this works well:</strong>
+                            <ul>
+                                <li>Centralized error definitions</li>
+                                <li>Type-safe (can't misspell error codes)</li>
+                                <li>Easy to map to HTTP responses</li>
+                                <li>Easy to document for API consumers</li>
+                            </ul>
+                        </div>
+
+                        <h3>Exception Translation at Boundaries</h3>
+
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="annotation">@RestControllerAdvice</span>
+<span class="keyword">public class</span> <span class="class-name">GlobalExceptionHandler</span> {
+    
+    <span class="annotation">@ExceptionHandler</span>(<span class="class-name">LedgerException</span>.class)
+    <span class="keyword">public</span> <span class="class-name">ResponseEntity</span>&lt;<span class="class-name">ErrorResponse</span>&gt; <span class="method">handleLedger</span>(<span class="class-name">LedgerException</span> e) {
+        log.<span class="method">warn</span>(<span class="string">"Ledger error: {}"</span>, e.<span class="method">toString</span>());
+        <span class="keyword">return</span> <span class="class-name">ResponseEntity</span>
+            .<span class="method">status</span>(e.<span class="method">getHttpStatus</span>())
+            .<span class="method">body</span>(e.<span class="method">toErrorResponse</span>());
+    }
+}</code></pre>
+                        </div>
+
+                        <hr>
+
+                        <h2>Quick Reference Card</h2>
+
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Situation</th>
+                                        <th>Approach</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Programming error (null, bad arg)</td>
+                                        <td><code>IllegalArgumentException</code>, <code>IllegalStateException</code> (unchecked)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Expected business error</td>
+                                        <td>Custom checked exception</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Wrapping lower-level exception</td>
+                                        <td>Pass cause to constructor</td>
+                                    </tr>
+                                    <tr>
+                                        <td>External API boundary</td>
+                                        <td>Convert to structured response</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Logging</td>
+                                        <td>Include original exception: <code>log.error("msg", e)</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Cleanup needed</td>
+                                        <td><code>try-with-resources</code></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider">Follow-up Question</div>
+
+            <!-- User Message 2 -->
+            <div class="message user">
+                <div class="avatar">U</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="name">User</span>
+                        <span class="timestamp">Clarification</span>
+                    </div>
+                    <div class="message-body">
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">super</span>(errorCode.<span class="method">getMessage</span>() + <span class="string">": "</span> + details); <span class="comment">// Concatenated for getMessage()</span></code></pre>
+                        </div>
+                        <p>This replaces the message the super had or appends it or what? Explain with 2-3 different scenarios.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider">Response</div>
+
+            <!-- Assistant Message 2 -->
+            <div class="message assistant">
+                <div class="avatar">AI</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="name">Claude</span>
+                        <span class="timestamp">Detailed Explanation</span>
+                    </div>
+                    <div class="message-body">
+                        <h1>How <code>super(message)</code> Works in Exception Constructors</h1>
+
+                        <p>The <code>super(...)</code> call <strong>sets</strong> the message in the parent class — it doesn't append to anything because there's nothing there yet. The parent's <code>detailMessage</code> field starts as <code>null</code>, and your <code>super()</code> call initializes it.</p>
+
+                        <h2>What's Actually Happening</h2>
+
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="comment">// Inside Throwable (the root of all exceptions)</span>
+<span class="keyword">public class</span> <span class="class-name">Throwable</span> {
+    <span class="keyword">private</span> <span class="class-name">String</span> detailMessage;  <span class="comment">// Starts as null</span>
+    
+    <span class="keyword">public</span> <span class="method">Throwable</span>(<span class="class-name">String</span> message) {
+        <span class="keyword">this</span>.detailMessage = message;  <span class="comment">// Your super() call triggers this</span>
+    }
+    
+    <span class="keyword">public</span> <span class="class-name">String</span> <span class="method">getMessage</span>() {
+        <span class="keyword">return</span> detailMessage;  <span class="comment">// Returns whatever was set</span>
+    }
+}</code></pre>
+                        </div>
+
+                        <hr>
+
+                        <h2>Three Scenarios</h2>
+
+                        <h3>Scenario 1: Using the first constructor (no details)</h3>
+
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">throw new</span> <span class="class-name">LedgerException</span>(<span class="class-name">ErrorCode</span>.ACCOUNT_NOT_FOUND);</code></pre>
+                        </div>
+
+                        <p>Constructor called:</p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">public</span> <span class="method">LedgerException</span>(<span class="class-name">ErrorCode</span> errorCode) {
+    <span class="keyword">super</span>(errorCode.<span class="method">getMessage</span>());  <span class="comment">// super("Account not found")</span>
+    <span class="keyword">this</span>.errorCode = errorCode;
+    <span class="keyword">this</span>.details = <span class="keyword">null</span>;
+}</code></pre>
+                        </div>
+
+                        <p><strong>Result:</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code>e.<span class="method">getMessage</span>()  → <span class="string">"Account not found"</span>
+e.<span class="method">getDetails</span>()  → <span class="keyword">null</span></code></pre>
+                        </div>
+
+                        <hr>
+
+                        <h3>Scenario 2: Using the second constructor (with details)</h3>
+
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">throw new</span> <span class="class-name">LedgerException</span>(<span class="class-name">ErrorCode</span>.ACCOUNT_NOT_FOUND, <span class="string">"accountId=ABC123"</span>);</code></pre>
+                        </div>
+
+                        <p>Constructor called:</p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">public</span> <span class="method">LedgerException</span>(<span class="class-name">ErrorCode</span> errorCode, <span class="class-name">String</span> details) {
+    <span class="keyword">super</span>(errorCode.<span class="method">getMessage</span>() + <span class="string">": "</span> + details);  <span class="comment">// super("Account not found: accountId=ABC123")</span>
+    <span class="keyword">this</span>.errorCode = errorCode;
+    <span class="keyword">this</span>.details = details;
+}</code></pre>
+                        </div>
+
+                        <p><strong>Result:</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code>e.<span class="method">getMessage</span>()  → <span class="string">"Account not found: accountId=ABC123"</span>  <span class="comment">// The concatenated string</span>
+e.<span class="method">getDetails</span>()  → <span class="string">"accountId=ABC123"</span>                     <span class="comment">// Just the details part</span></code></pre>
+                        </div>
+
+                        <hr>
+
+                        <h3>Scenario 3: Using the third constructor (with cause)</h3>
+
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">try</span> {
+    database.<span class="method">findAccount</span>(id);
+} <span class="keyword">catch</span> (<span class="class-name">SQLException</span> sqlEx) {
+    <span class="keyword">throw new</span> <span class="class-name">LedgerException</span>(<span class="class-name">ErrorCode</span>.DB_ERROR, <span class="string">"query failed for id="</span> + id, sqlEx);
+}</code></pre>
+                        </div>
+
+                        <p>Constructor called:</p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code><span class="keyword">public</span> <span class="method">LedgerException</span>(<span class="class-name">ErrorCode</span> errorCode, <span class="class-name">String</span> details, <span class="class-name">Throwable</span> cause) {
+    <span class="keyword">super</span>(errorCode.<span class="method">getMessage</span>() + <span class="string">": "</span> + details, cause);  <span class="comment">// super("Database error: query failed for id=123", sqlEx)</span>
+    <span class="keyword">this</span>.errorCode = errorCode;
+    <span class="keyword">this</span>.details = details;
+}</code></pre>
+                        </div>
+
+                        <p><strong>Result:</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">java</div>
+                            <pre><code>e.<span class="method">getMessage</span>()  → <span class="string">"Database error: query failed for id=123"</span>
+e.<span class="method">getDetails</span>()  → <span class="string">"query failed for id=123"</span>
+e.<span class="method">getCause</span>()    → <span class="class-name">SQLException</span>(<span class="string">"Connection refused"</span>)</code></pre>
+                        </div>
+
+                        <p><strong>Stack trace shows:</strong></p>
+                        <div class="code-block">
+                            <div class="code-header">stack trace</div>
+                            <pre><code>org.monzo.error.LedgerException: Database error: query failed for id=123
+    at AccountService.getAccount(AccountService.java:52)
+    at ...
+<span class="keyword">Caused by:</span> java.sql.SQLException: Connection refused
+    at com.mysql.jdbc.Driver.connect(Driver.java:234)
+    at ...</code></pre>
+                        </div>
+
+                        <hr>
+
+                        <h2>Visual Summary</h2>
+
+                        <div class="hierarchy">
+LedgerException constructor
+         │
+         ▼
+<span class="method">super</span>(errorCode.<span class="method">getMessage</span>() + <span class="string">": "</span> + details)
+         │
+         ▼
+Throwable constructor receives: <span class="string">"Account not found: accountId=ABC123"</span>
+         │
+         ▼
+Sets: <span class="keyword">this</span>.detailMessage = <span class="string">"Account not found: accountId=ABC123"</span>
+         │
+         ▼
+<span class="method">getMessage</span>() returns exactly that string
+                        </div>
+
+                        <div class="callout">
+                            <strong>The key insight:</strong> You're constructing the message yourself before passing it up. The parent just stores whatever string you give it.
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Java Exceptions Guide • Generated from Chat Conversation</p>
+        </footer>
+    </div>
+</body>
+</html>
