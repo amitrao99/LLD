@@ -1,0 +1,1105 @@
+For a **30-minute LLD round with ~20 minutes of Java coding**, you should deliberately keep Elevator much smaller than a production elevator system.
+
+At the very beginning, think in **5 broad buckets**, in this order:
+
+1. **What does the system need to do?**
+   Keep requirements tiny:
+
+   * Multiple elevators
+   * User presses `UP/DOWN` on a floor
+   * User selects destination inside elevator
+   * System assigns an elevator
+   * Elevator moves and opens/closes door
+
+   That's enough. Don't start with emergency modes, weight sensors, maintenance, etc.
+
+2. **What are my core objects?**
+   Immediately identify roughly:
+
+   * `ElevatorSystem` / `ElevatorController`
+   * `Elevator`
+   * `Request`
+   * `Direction` enum
+   * `ElevatorState` enum
+
+   Maybe `Door` if useful, but don't over-model.
+
+3. **Where does the main responsibility live?**
+   Think:
+
+   > Controller decides **which elevator** gets a request.
+   > Elevator decides **how it executes its assigned requests**.
+
+   This separation is probably the most important design decision.
+
+4. **How will an elevator store and process requests?**
+   This is the main algorithmic question.
+
+   For example:
+
+   * going `UP` → process higher floors in ascending order
+   * going `DOWN` → process lower floors in descending order
+
+   You could use two ordered sets / priority queues.
+
+   Don't jump into sophisticated scheduling yet.
+
+5. **What should be extensible?**
+   Pick **one obvious extension point**:
+
+   ```java
+   interface ElevatorSelectionStrategy {
+       Elevator selectElevator(List<Elevator> elevators, Request request);
+   }
+   ```
+
+   Then your simple implementation can be:
+   `NearestElevatorStrategy`.
+
+   This gives you something meaningful to discuss when interviewer asks, "How would you extend this?"
+
+So mentally, your first **1–2 minutes** should look like:
+
+> **Requirements → Core objects → Responsibilities → Request processing → One strategy interface**
+
+And then stop designing and start coding.
+
+### The mental picture I want you to remember
+
+```text
+User Request
+     |
+     v
+ElevatorController
+     |
+     | selection strategy
+     v
+ Elevator
+     |
+     | stores requests
+     v
+Move -> Reach Floor -> Open Door -> Close Door
+```
+
+For your interview scope, **do not start by thinking about buttons, panels, floors, buildings, displays, sensors, doors, motors, observers, factories, etc.**
+
+Those are where Elevator LLD answers become unnecessarily huge.
+
+Your core problem is simply:
+
+> **Who gets the request? → How does that elevator maintain requests? → How does it move?**
+
+That's the coarse-level thinking I would use before we get into the actual class diagram/code.
+
+
+
+
+
+
+Yes — this is exactly where Elevator LLD can explode if you model every physical detail. For your round, you should **freeze the world very aggressively**.
+
+Start with this simplest system statement:
+
+> We have a fixed set of floors and a fixed set of elevators. Every elevator can serve every floor. A request is created when someone at a floor presses UP or DOWN. The controller chooses an elevator based on its current state and position.
+
+And one correction: **you do not need `User` inside the request at all.** The system doesn't care who pressed the button.
+
+So your external request can be just:
+
+```java
+class ElevatorRequest {
+    int floor;
+    Direction direction;
+}
+```
+
+Now the main thing that is confusing you: **what is elevator state?**
+
+Keep that extremely small too.
+
+```java
+enum ElevatorState {
+    IDLE,
+    MOVING
+}
+
+enum Direction {
+    UP,
+    DOWN,
+    NONE
+}
+```
+
+Don't encode everything into `State`.
+
+Each `Elevator` simply has:
+
+```java
+class Elevator {
+    String id;
+    int currentFloor;
+    ElevatorState state;
+    Direction direction;
+}
+```
+
+That already tells the controller almost everything it needs:
+
+```text
+Elevator A
+currentFloor = 3
+state = MOVING
+direction = UP
+```
+
+versus:
+
+```text
+Elevator B
+currentFloor = 7
+state = IDLE
+direction = NONE
+```
+
+Then controller's job is just:
+
+```text
+request comes:
+floor = 5
+direction = UP
+
+Controller looks at elevators
+
+A = floor 3, moving UP
+B = floor 7, idle
+C = floor 9, moving DOWN
+
+choose one
+```
+
+You **do not yet need to model** where elevators "stay", whether they're arranged in a line, shafts, coordinates, etc.
+
+Their physical location is entirely represented by:
+
+```java
+currentFloor
+```
+
+That's it.
+
+### Where I would draw the boundary
+
+For the first version, your model should basically be:
+
+```text
+ElevatorSystem / Controller
+        |
+        | owns
+        v
+List<Elevator>
+
+Elevator
+- id
+- currentFloor
+- direction
+- state
+- pendingRequests
+
+ElevatorRequest
+- floor
+- direction
+```
+
+Then there are only **two actual problems** to solve:
+
+**Problem 1 — assignment**
+
+```java
+Elevator selectElevator(ElevatorRequest request)
+```
+
+Which elevator gets the hall request?
+
+**Problem 2 — execution**
+
+Once assigned:
+
+```java
+elevator.addRequest(request);
+```
+
+How does that elevator decide which floor to visit next?
+
+Everything else is secondary.
+
+And for a 20-minute implementation, I'd explicitly tell the interviewer something like:
+
+> "I'll assume all elevators serve all floors, floor count and elevator count are configured at startup, and I'll abstract away physical door/motor/sensor mechanics. I'll focus on request assignment and elevator scheduling."
+
+That single statement prevents the problem from exploding.
+
+One more subtle distinction that will help you a lot:
+
+```text
+Hall request:
+floor = 5
+direction = UP
+
+Internal request:
+destinationFloor = 9
+```
+
+These are technically different requests. But **don't model both immediately**. First get hall-request assignment working. Then we can decide the cleanest minimal way to handle destination selection without blowing up the design.
+
+
+
+
+
+Yes. That is a very good separation boundary for the interview.
+
+You can think of the first half as a **snapshot-based assignment problem**:
+
+> A hall request arrives. At that instant, the controller looks at the current snapshot of all elevators and chooses one elevator. Once chosen, the request is handed to that elevator. What happens afterward is the elevator's own scheduling/execution problem.
+
+So conceptually:
+
+```text
+Hall Request
+   |
+   v
+ElevatorController
+   |
+   | inspect snapshot:
+   | floor, direction, state, pending load
+   v
+SelectionStrategy
+   |
+   v
+Chosen Elevator
+```
+
+And yes, for modeling purposes you can almost pretend **time freezes during selection**. You don't need to solve concurrency yet.
+
+That gives you a clean interface:
+
+```java
+interface ElevatorSelectionStrategy {
+    Elevator select(List<Elevator> elevators, HallRequest request);
+}
+```
+
+The controller becomes very thin:
+
+```java
+class ElevatorController {
+    List<Elevator> elevators;
+    ElevatorSelectionStrategy strategy;
+
+    void requestElevator(HallRequest request) {
+        Elevator elevator = strategy.select(elevators, request);
+        elevator.addRequest(request);
+    }
+}
+```
+
+The key insight is that the selection algorithm only needs to know the **observable state** of an elevator. For now, that might be:
+
+```text
+currentFloor
+currentDirection
+state: IDLE / MOVING
+possibly number of pending stops
+```
+
+It does **not** need to know how the elevator internally stores its queues, opens doors, changes direction, etc.
+
+So in your head, split Elevator LLD into:
+
+```text
+1. Dispatching
+   "Which elevator should take this request?"
+
+                boundary
+
+2. Elevator scheduling/execution
+   "Given requests assigned to me, what floor do I visit next?"
+```
+
+There can be correspondence between them — for example dispatch may inspect an elevator's direction or workload — but the **algorithms are separable**.
+
+For a 30-minute round, this is exactly the kind of decomposition you want. You can finish dispatching first, then move inside one elevator and solve its request scheduling.
+
+
+
+
+Yes. For your LLD round, **do not model real time**. That is unnecessary and will make the code much harder than the design problem requires.
+
+Treat elevator movement as **logical state transitions**, not a physical simulation.
+
+So your `Elevator` can simply have:
+
+```java
+class Elevator {
+    String id;
+    int currentFloor;
+    Direction direction;
+    ElevatorState state;
+
+    void moveTo(int targetFloor) {
+        if (targetFloor > currentFloor) {
+            direction = Direction.UP;
+        } else if (targetFloor < currentFloor) {
+            direction = Direction.DOWN;
+        }
+
+        state = ElevatorState.MOVING;
+
+        // Simulate movement immediately
+        currentFloor = targetFloor;
+
+        state = ElevatorState.IDLE;
+        direction = Direction.NONE;
+    }
+}
+```
+
+That is perfectly acceptable for a 20-minute coding round.
+
+The interviewer should understand that:
+
+> "`moveTo()` represents commanding the physical elevator. In a production system this would be asynchronous and driven by motor/sensor events, but for this LLD implementation I'm modeling it as an immediate state transition."
+
+That one sentence gives you the abstraction boundary.
+
+### Don't think in milliseconds
+
+You do **not** need:
+
+```text
+floor 1
+wait 2 sec
+floor 2
+wait 2 sec
+floor 3
+...
+```
+
+You don't need threads, timers, `sleep()`, schedulers, or background workers.
+
+Think instead:
+
+```text
+before moveTo(7)
+
+currentFloor = 3
+state = IDLE
+direction = NONE
+
+        moveTo(7)
+
+after
+
+currentFloor = 7
+state = IDLE
+direction = NONE
+```
+
+If you want to make the execution slightly more visible during a demo, you can simulate one-floor-at-a-time without introducing real time:
+
+```java
+void moveTo(int targetFloor) {
+    state = ElevatorState.MOVING;
+
+    if (targetFloor > currentFloor) {
+        direction = Direction.UP;
+
+        while (currentFloor < targetFloor) {
+            currentFloor++;
+            System.out.println(id + " reached floor " + currentFloor);
+        }
+
+    } else {
+        direction = Direction.DOWN;
+
+        while (currentFloor > targetFloor) {
+            currentFloor--;
+            System.out.println(id + " reached floor " + currentFloor);
+        }
+    }
+
+    state = ElevatorState.IDLE;
+    direction = Direction.NONE;
+}
+```
+
+This is actually nice for an interview because your `main()` can visibly show:
+
+```text
+E1 reached floor 3
+E1 reached floor 4
+E1 reached floor 5
+```
+
+without introducing actual time.
+
+The more interesting state question is actually **what happens after the elevator has multiple requests**.
+
+Because then `moveTo()` isn't really the scheduling algorithm. It is just the actuator:
+
+```text
+Scheduler:
+"What is my next floor?"
+
+        ↓
+
+Elevator:
+"Okay, moveTo(nextFloor)"
+```
+
+So eventually I'd structure it as:
+
+```java
+void processNextRequest() {
+    int nextFloor = ...;  // chosen from pending requests
+    moveTo(nextFloor);
+}
+```
+
+That keeps three concepts clean:
+
+```text
+Controller
+    decides WHICH ELEVATOR
+
+Elevator's scheduler
+    decides WHICH FLOOR NEXT
+
+moveTo()
+    performs the logical movement
+```
+
+And yes, in a real elevator system `moveTo()` would likely send commands to hardware and state would change asynchronously based on sensor events. **For this LLD round, abstract all of that away.**
+
+
+
+
+Exactly. Once an elevator can have **multiple assigned stops**, `moveTo(targetFloor)` by itself is too simplistic, because reaching one floor does **not** necessarily mean the elevator becomes `IDLE`.
+
+So the next thing to design is the **per-elevator request scheduler**.
+
+For your round, keep it very simple:
+
+```text
+Each Elevator owns pending destination floors.
+
+If moving UP:
+    serve higher floors in ascending order.
+
+If moving DOWN:
+    serve lower floors in descending order.
+
+When no pending requests remain:
+    state = IDLE
+    direction = NONE
+```
+
+A clean structure is:
+
+```java
+class Elevator {
+    String id;
+    int currentFloor;
+    ElevatorState state;
+    Direction direction;
+
+    TreeSet<Integer> upStops;
+    TreeSet<Integer> downStops;
+}
+```
+
+Why two sets?
+
+```text
+currentFloor = 5
+
+requests = 8, 10, 3, 1
+
+upStops   = [8, 10]
+downStops = [3, 1]
+```
+
+If currently going `UP`, you keep serving:
+
+```text
+5 -> 8 -> 10
+```
+
+Then reverse:
+
+```text
+10 -> 3 -> 1
+```
+
+So now your important method is not really:
+
+```java
+moveTo(...)
+```
+
+It becomes:
+
+```java
+processNextStop()
+```
+
+Something conceptually like:
+
+```java
+void processNextStop() {
+
+    if (direction == Direction.UP && !upStops.isEmpty()) {
+        int nextFloor = upStops.pollFirst();
+        moveTo(nextFloor);
+        return;
+    }
+
+    if (direction == Direction.DOWN && !downStops.isEmpty()) {
+        int nextFloor = downStops.pollLast();
+        moveTo(nextFloor);
+        return;
+    }
+
+    // Current direction exhausted.
+    if (!upStops.isEmpty()) {
+        direction = Direction.UP;
+        state = ElevatorState.MOVING;
+        moveTo(upStops.pollFirst());
+    } else if (!downStops.isEmpty()) {
+        direction = Direction.DOWN;
+        state = ElevatorState.MOVING;
+        moveTo(downStops.pollLast());
+    } else {
+        direction = Direction.NONE;
+        state = ElevatorState.IDLE;
+    }
+}
+```
+
+And importantly, **`moveTo()` should not decide IDLE**.
+
+It should only perform movement:
+
+```java
+void moveTo(int floor) {
+    currentFloor = floor;
+}
+```
+
+Then the scheduler decides what happens next.
+
+That's the separation you were missing:
+
+```text
+moveTo()
+    = physical/logical movement primitive
+
+processNextStop()
+    = scheduler/state machine
+```
+
+So:
+
+```text
+processNextStop()
+        |
+        v
+pick next request
+        |
+        v
+moveTo(nextFloor)
+        |
+        v
+remove that request
+        |
+        v
+any more requests?
+   /             \
+ yes              no
+ |                 |
+continue       state = IDLE
+```
+
+This is much cleaner.
+
+And for the interview, I wouldn't initially make `moveTo()` simulate every intermediate floor either. Just:
+
+```java
+currentFloor = targetFloor;
+```
+
+because **the interesting LLD is request ordering and state transitions, not motor simulation**.
+
+The next important question is actually: when a **new request arrives while the elevator is already moving**, which of `upStops/downStops` does it enter? That's where the elevator scheduling logic becomes interesting.
+
+
+Yes — **for your interview scope, that model is fine**, and it is simpler than introducing `upStops/downStops` immediately.
+
+What you are describing is basically:
+
+> Each elevator maintains an **ordered queue of stops**.
+> `direction` is derived from the current floor and the next queued stop.
+> `move()` processes exactly one stop.
+
+That is a very clean first implementation.
+
+So your elevator state can be:
+
+```java
+class Elevator {
+    String id;
+    int currentFloor;
+    Direction direction;
+    ElevatorState state;
+
+    Queue<Integer> stops;
+}
+```
+
+You actually do **not need `previousFloor`** just to know direction. `currentFloor` and `nextStop` are enough.
+
+Example:
+
+```text
+currentFloor = 0
+queue = [6]
+```
+
+When `6` is added:
+
+```text
+6 > currentFloor
+=> direction = UP
+=> state = MOVING
+```
+
+But you don't physically move yet.
+
+Then:
+
+```java
+move();
+```
+
+does:
+
+```text
+poll 6
+currentFloor = 6
+```
+
+Now inspect the next queued stop.
+
+Suppose:
+
+```text
+queue = [9, 4]
+```
+
+After reaching `6`:
+
+```text
+next = 9
+9 > 6
+=> direction stays UP
+=> state stays MOVING
+```
+
+Next `move()`:
+
+```text
+6 -> 9
+```
+
+Then:
+
+```text
+next = 4
+4 < 9
+=> direction = DOWN
+```
+
+Next `move()`:
+
+```text
+9 -> 4
+```
+
+Then queue becomes empty:
+
+```text
+direction = NONE
+state = IDLE
+```
+
+So conceptually your `move()` is:
+
+```java
+void move() {
+    if (stops.isEmpty()) {
+        state = ElevatorState.IDLE;
+        direction = Direction.NONE;
+        return;
+    }
+
+    int nextFloor = stops.poll();
+
+    // logically reach the next stop
+    currentFloor = nextFloor;
+
+    if (stops.isEmpty()) {
+        state = ElevatorState.IDLE;
+        direction = Direction.NONE;
+        return;
+    }
+
+    int upcomingFloor = stops.peek();
+
+    if (upcomingFloor > currentFloor) {
+        direction = Direction.UP;
+    } else if (upcomingFloor < currentFloor) {
+        direction = Direction.DOWN;
+    } else {
+        direction = Direction.NONE;
+    }
+
+    state = ElevatorState.MOVING;
+}
+```
+
+And when you add the **first** stop:
+
+```java
+void addStop(int floor) {
+    stops.offer(floor);
+
+    if (state == ElevatorState.IDLE) {
+        if (floor > currentFloor) {
+            direction = Direction.UP;
+        } else if (floor < currentFloor) {
+            direction = Direction.DOWN;
+        }
+
+        state = ElevatorState.MOVING;
+    }
+}
+```
+
+### One important distinction
+
+Your model answers:
+
+> "Given the queue `[6, 9, 4]`, how does the elevator execute it?"
+
+It does **not yet answer**:
+
+> "Should a newly arriving floor `7` be inserted before `9`, after `9`, or at the end?"
+
+That's the **scheduling policy**.
+
+And that's good. Don't mix the two yet.
+
+For your LLD:
+
+```text
+Elevator
+    stores an ordered stop queue
+    executes one stop at a time
+
+Scheduler
+    decides the ordering of that queue
+```
+
+So yes — **this is a better starting model for your 20-minute implementation**.
+
+One tiny wording change: I would say the elevator starts at a **configured default floor**, maybe `0`, rather than making "all elevators always start at floor 0" a core design assumption. In code you can absolutely initialize them to `0`.
+
+
+
+Yes — conceptually they are **two different strategies**, because they answer two different questions:
+
+* **Elevator allocation strategy**: *Which elevator should take this new hall request?*
+* **Elevator scheduling strategy**: *Given the requests already assigned to one elevator, what stop should it serve next / in what order?*
+
+For your 30-minute round, I would usually keep them **separate conceptually**, but only extract both into interfaces if the interviewer cares about extensibility.
+
+### Option 1: Keep them separate
+
+Example:
+
+```java
+interface ElevatorSelectionStrategy {
+    Elevator select(List<Elevator> elevators, HallRequest request);
+}
+
+interface ElevatorSchedulingStrategy {
+    void addStop(Elevator elevator, int floor);
+    Integer getNextStop(Elevator elevator);
+}
+```
+
+Reasoning:
+
+```text
+Hall Request
+    |
+    v
+Allocation Strategy
+"Which elevator?"
+    |
+    v
+Elevator E2
+    |
+    v
+Scheduling Strategy
+"Where does E2 go next?"
+```
+
+This follows **single responsibility** very naturally.
+
+The allocation algorithm may care about:
+
+```text
+distance from request floor
+current direction
+current load
+number of pending stops
+```
+
+Whereas scheduling may care about:
+
+```text
+current floor
+current direction
+existing stops
+new destination
+```
+
+And they can change independently.
+
+For example:
+
+```text
+Allocation:
+NearestElevator
+        ->
+LeastLoadedElevator
+
+Scheduling:
+FIFO
+        ->
+SCAN / LOOK-like scheduling
+```
+
+You can change one without changing the other.
+
+That is the strongest justification for separating them.
+
+---
+
+### Option 2: Put both into one strategy
+
+You could instead have something like:
+
+```java
+interface ElevatorStrategy {
+    Elevator selectElevator(...);
+
+    void scheduleStop(Elevator elevator, int floor);
+}
+```
+
+Why would someone choose this?
+
+Because in a **small interview implementation**, allocation and scheduling can be tightly related.
+
+Imagine a strategy like:
+
+> Prefer an elevator already moving toward the requested floor and insert the request into its current route.
+
+Now choosing the elevator depends heavily on **how that elevator's route is scheduled**.
+
+For example:
+
+```text
+Request: floor 6, UP
+
+E1:
+current = 2
+route = [4, 8]
+
+E2:
+current = 5
+route = [1]
+```
+
+Pure "nearest elevator" might choose E2.
+
+But a combined scheduling-aware strategy might say:
+
+> E1 is already going upward through floor 6, so insert 6 between 4 and 8.
+
+So allocation and scheduling aren't completely independent in sophisticated systems.
+
+That gives a valid argument for one combined abstraction:
+
+> "The dispatching policy owns the overall optimization of elevator movement, so it both selects an elevator and determines where the new request enters its route."
+
+This can actually model a real dispatcher more naturally.
+
+---
+
+## Which should **you** choose?
+
+For your interview:
+
+**Separate them logically.**
+
+But I wouldn't necessarily create two elaborate strategy frameworks immediately.
+
+I'd do:
+
+```java
+interface ElevatorSelectionStrategy {
+    Elevator select(...);
+}
+```
+
+and inside `Elevator` initially keep a simple queue:
+
+```java
+Queue<Integer> stops;
+```
+
+with straightforward scheduling.
+
+Then if the interviewer asks:
+
+> "Can we support another scheduling algorithm?"
+
+You say:
+
+> "Yes. The stop-ordering logic can be extracted behind an `ElevatorSchedulingStrategy`, independent of elevator allocation."
+
+That gives you good design **without burning coding time on abstractions you haven't needed yet**.
+
+So think of it as:
+
+```text
+Conceptually:
+2 strategies
+
+Initial 20-minute code:
+1 explicit strategy + simple scheduling logic
+
+Extension:
+extract scheduling strategy
+```
+
+The reason **not** to start with one giant `ElevatorStrategy` is that it combines two different responsibilities and becomes harder to reason about.
+
+The reason **not** to immediately build two full strategy hierarchies is the opposite problem: **over-engineering for a 20-minute implementation**.
+
+That middle ground is probably the strongest interview answer.
+
+
+
+
+
+Yes, that separation is clean.
+
+For the first pass:
+
+```text
+SelectionStrategy
+= Which elevator gets the request?
+
+Simple implementation:
+choose elevator with the fewest queued stops
+```
+
+Then:
+
+```text
+SchedulingStrategy
+= Where does this new stop go inside that elevator's route?
+```
+
+And you can have progressively better scheduling policies:
+
+```text
+FIFO scheduling
+Just append the stop.
+
+Direction-aware scheduling
+If elevator is already moving toward that floor,
+insert it into the current path.
+
+Otherwise,
+place it after the current directional run.
+```
+
+Example:
+
+```text
+Elevator at 2
+Direction = UP
+Queue = [5, 8]
+
+New stop = 6
+
+FIFO:
+[5, 8, 6]
+
+Direction-aware:
+[5, 6, 8]
+```
+
+Whereas:
+
+```text
+New stop = 1
+
+Current direction = UP
+
+Direction-aware:
+[5, 8, 1]
+```
+
+because `1` should be handled after finishing the upward run.
+
+So your architecture becomes very intuitive:
+
+```text
+Request arrives
+      |
+      v
+SelectionStrategy
+"Which elevator?"
+      |
+      v
+Elevator
+      |
+      v
+SchedulingStrategy
+"Where in its stops?"
+      |
+      v
+Ordered stop queue
+```
+
+One wording adjustment: I wouldn't call the simple scheduler "random insertion." Call it **FIFO / append scheduling**. Random insertion implies nondeterministic ordering, which you probably don't want.
+
+And this is a good interview progression: **least-loaded selection + FIFO scheduling first**, then mention direction-aware scheduling as the obvious extension.
+
+
+
